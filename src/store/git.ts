@@ -42,8 +42,8 @@ interface SyncOutcome {
 const LEGACY_DEFAULTS = {
   repoUrl: 'https://github.com/ehsaanqazi/api-collections',
   username: 'ehsaanqazi',
-  authorName: ['API Client', 'Zorvilo', 'Yaak Lite'],
-  authorEmail: ['api-client@localhost', 'zorvilo@localhost', 'yaak-lite@localhost'],
+  authorName: ['API Client', 'Zorvilo'],
+  authorEmail: ['api-client@localhost', 'zorvilo@localhost'],
 };
 
 /** Drop pre-filled defaults and fill the author from the system `git config`. */

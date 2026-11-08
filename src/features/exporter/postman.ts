@@ -26,11 +26,11 @@ export async function exportWorkspaceBundle(workspaceId: string): Promise<any> {
 }
 
 export function exportHistory(entries: HistoryEntry[]): any {
-  return { __yaakLite: 'history', version: 1, entries };
+  return { __zorvilo: 'history', version: 1, entries };
 }
 
 export function exportSavedResponses(responses: SavedResponse[]): any {
-  return { __yaakLite: 'saved-responses', version: 1, responses };
+  return { __zorvilo: 'saved-responses', version: 1, responses };
 }
 
 /** Save several JSON documents: one file → Save dialog; several → pick a folder. */

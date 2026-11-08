@@ -247,9 +247,7 @@ src-tauri/           Rust backend (Tauri app crate + workspace)
   crates/import_export  Postman, cURL, codegen, bundles
   crates/collection_runner  shared request execution pipeline
 landing/             marketing website (sections, mockups, GitHub release/stats hooks)
-docs/                architecture, database schema, development and migration guides
 ```
 
 The UI keeps its state in memory and queues writes; Rust owns networking, storage,
-scripting, Git and import/export. See `docs/ARCHITECTURE.md`, `docs/DATABASE_SCHEMA.md`,
-`docs/DEVELOPMENT.md` and `docs/FEATURE_MATRIX.md`.
+scripting, Git and import/export.

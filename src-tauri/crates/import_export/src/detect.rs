@@ -5,8 +5,8 @@ pub enum ImportKind {
     PostmanCollection { version: String },
     PostmanEnvironment,
     WorkspaceBundle,
-    YaakCollectionFile,
-    YaakEnvironmentFile,
+    ZorviloCollectionFile,
+    ZorviloEnvironmentFile,
     History,
     SavedResponses,
     Unknown,
@@ -17,11 +17,11 @@ impl ImportKind {
         match self {
             ImportKind::PostmanCollection { version } => format!("Postman collection v{version}"),
             ImportKind::PostmanEnvironment => "Postman environment".into(),
-            ImportKind::WorkspaceBundle => "Yaak Lite workspace bundle".into(),
-            ImportKind::YaakCollectionFile => "Yaak Lite collection file".into(),
-            ImportKind::YaakEnvironmentFile => "Yaak Lite environment file".into(),
-            ImportKind::History => "Yaak Lite history export".into(),
-            ImportKind::SavedResponses => "Yaak Lite saved responses export".into(),
+            ImportKind::WorkspaceBundle => "Zorvilo workspace bundle".into(),
+            ImportKind::ZorviloCollectionFile => "Zorvilo collection file".into(),
+            ImportKind::ZorviloEnvironmentFile => "Zorvilo environment file".into(),
+            ImportKind::History => "Zorvilo history export".into(),
+            ImportKind::SavedResponses => "Zorvilo saved responses export".into(),
             ImportKind::Unknown => "Unknown format".into(),
         }
     }
@@ -29,10 +29,10 @@ impl ImportKind {
 
 pub fn detect_import(json: &Value) -> ImportKind {
     let Some(obj) = json.as_object() else { return ImportKind::Unknown };
-    match obj.get("__yaakLite").and_then(Value::as_str) {
+    match obj.get("__zorvilo").and_then(Value::as_str) {
         Some("workspace-bundle") => return ImportKind::WorkspaceBundle,
-        Some("collection") => return ImportKind::YaakCollectionFile,
-        Some("environment") => return ImportKind::YaakEnvironmentFile,
+        Some("collection") => return ImportKind::ZorviloCollectionFile,
+        Some("environment") => return ImportKind::ZorviloEnvironmentFile,
         Some("history") => return ImportKind::History,
         Some("saved-responses") => return ImportKind::SavedResponses,
         _ => {}

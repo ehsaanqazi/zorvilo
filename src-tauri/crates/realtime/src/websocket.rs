@@ -102,7 +102,7 @@ async fn run(em: Emitter, opts: WsOptions, mut rx: mpsc::UnboundedReceiver<Comma
                     }
                 }
                 Some(Command::Ping) => {
-                    if write.send(Message::Ping(b"yaak".to_vec())).await.is_ok() {
+                    if write.send(Message::Ping(b"zorvilo".to_vec())).await.is_ok() {
                         em.sys("Ping sent");
                     }
                 }

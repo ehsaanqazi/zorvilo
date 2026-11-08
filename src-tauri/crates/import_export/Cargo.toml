@@ -4,7 +4,7 @@ version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
-description = "Postman, cURL, code generation and legacy Yaak Lite (pre-Zorvilo) migration"
+description = "Postman, cURL, code generation and legacy migration"
 
 [dependencies]
 zorvilo-core.workspace = true

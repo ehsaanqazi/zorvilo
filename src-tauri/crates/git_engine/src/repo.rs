@@ -299,8 +299,8 @@ impl GitRepo {
                 return Ok(None);
             }
         }
-        let name = if author_name.trim().is_empty() { "Yaak Lite" } else { author_name.trim() };
-        let email = if author_email.trim().is_empty() { "yaak-lite@localhost" } else { author_email.trim() };
+        let name = if author_name.trim().is_empty() { "Zorvilo" } else { author_name.trim() };
+        let email = if author_email.trim().is_empty() { "zorvilo@localhost" } else { author_email.trim() };
         let sig = Signature::now(name, email)?;
         let mut parents = Vec::new();
         if let Some(h) = head_commit {
@@ -362,10 +362,10 @@ impl GitRepo {
             self.repo.checkout_tree(&target, Some(&mut co))?;
             match self.repo.find_reference(&local_ref) {
                 Ok(mut r) => {
-                    r.set_target(their.id(), "yaak-lite: fast-forward")?;
+                    r.set_target(their.id(), "zorvilo: fast-forward")?;
                 }
                 Err(_) => {
-                    self.repo.reference(&local_ref, their.id(), true, "yaak-lite: pull (unborn)")?;
+                    self.repo.reference(&local_ref, their.id(), true, "zorvilo: pull (unborn)")?;
                 }
             }
             self.repo.set_head(&local_ref)?;
@@ -455,7 +455,7 @@ impl GitRepo {
             .ok_or_else(|| GitError::Msg(format!("origin/{branch} does not exist")))?;
         let obj = self.repo.find_object(id, Some(ObjectType::Commit))?;
         let local_ref = format!("refs/heads/{branch}");
-        self.repo.reference(&local_ref, id, true, "yaak-lite: reset to remote")?;
+        self.repo.reference(&local_ref, id, true, "zorvilo: reset to remote")?;
         self.repo.set_head(&local_ref)?;
         self.repo.reset(&obj, ResetType::Hard, None)?;
         Ok(())

@@ -1,4 +1,4 @@
-//! Import (Postman, cURL, Zorvilo/Yaak Lite bundles), export and code generation.
+//! Import (Postman, cURL, Zorvilo bundles), export and code generation.
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -61,7 +61,7 @@ pub fn import_parse(text: String, workspace_id: String) -> CmdResult<ParsedImpor
         ImportKind::PostmanEnvironment => {
             Ok(ParsedImport::PostmanEnvironment { environment: postman::import_environment(&json, &workspace_id).map_err(|e| e.to_string())? })
         }
-        ImportKind::WorkspaceBundle | ImportKind::YaakCollectionFile | ImportKind::YaakEnvironmentFile => {
+        ImportKind::WorkspaceBundle | ImportKind::ZorviloCollectionFile | ImportKind::ZorviloEnvironmentFile => {
             let mut data = legacy::import_legacy(&json).map_err(|e| e.to_string())?;
             // bundles land in the active workspace, keeping their ids (re-import replaces)
             for c in &mut data.collections {

@@ -2,7 +2,7 @@
 // sandboxed Boa context. The host replaces the context placeholder with a JSON string
 // literal describing the request/response/variables. Scripts have no access
 // to the filesystem, process, or application internals: the only host
-// function is the optional __yaak_send bridge used by pm.sendRequest().
+// function is the optional __zorvilo_send bridge used by pm.sendRequest().
 
 var __ctx = JSON.parse(__CTX_JSON__);
 var __state = {
@@ -391,10 +391,10 @@ function __sendRequest(req, cb) {
   }
   var payload = JSON.stringify({ url: __replaceIn(String(spec.url || '')), method: String(spec.method || 'GET').toUpperCase(), headers: headers, body: body });
   var err = null, res = null;
-  if (typeof __yaak_send !== 'function') {
+  if (typeof __zorvilo_send !== 'function') {
     err = new Error('pm.sendRequest is disabled in Settings → Scripting');
   } else {
-    var out = JSON.parse(__yaak_send(payload));
+    var out = JSON.parse(__zorvilo_send(payload));
     if (out.error) err = new Error(out.error);
     else res = __makeResponse(out);
   }
@@ -468,7 +468,7 @@ var responseCode = __ctx.response ? { code: __ctx.response.code, name: __ctx.res
 var responseTime = __ctx.response ? __ctx.response.responseTime : undefined;
 var responseHeaders = pmResponse ? pmResponse.headers.toObject() : undefined;
 
-function __yaak_result() {
+function __zorvilo_result() {
   Object.keys(tests).forEach(function (k) { __state.tests.push({ name: k, passed: !!tests[k] }); });
   tests = {};
   var m = __state.mutations.request;

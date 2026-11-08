@@ -84,7 +84,7 @@ zorvilo-storage = { path = "crates/storage" }
 zorvilo-git = { path = "crates/git_engine" }
 zorvilo-import-export = { path = "crates/import_export" }
 zorvilo-runner = { path = "crates/collection_runner" }
-yaak-ui = { path = "crates/ui" }
+zorvilo-ui = { path = "crates/ui" }
 
 # async / networking
 tokio = { version = "1.40", features = ["rt-multi-thread", "macros", "sync", "time", "net", "io-util", "fs"] }

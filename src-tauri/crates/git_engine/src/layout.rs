@@ -26,7 +26,7 @@ pub struct RepoData {
 
 #[derive(Serialize, Deserialize)]
 struct CollectionFile {
-    #[serde(rename = "__yaakLite")]
+    #[serde(rename = "__zorvilo")]
     tag: String,
     version: u32,
     collection: Collection,
@@ -38,7 +38,7 @@ struct CollectionFile {
 
 #[derive(Serialize, Deserialize)]
 struct EnvironmentFile {
-    #[serde(rename = "__yaakLite")]
+    #[serde(rename = "__zorvilo")]
     tag: String,
     version: u32,
     environment: Environment,
@@ -260,7 +260,7 @@ pub fn read_all(root: &Path) -> (RepoData, Vec<String>) {
                 continue;
             }
         };
-        let tag = value.get("__yaakLite").and_then(|t| t.as_str()).unwrap_or("");
+        let tag = value.get("__zorvilo").and_then(|t| t.as_str()).unwrap_or("");
         if path.ends_with("/workspace.json") && tag.is_empty() {
             match serde_json::from_value::<Workspace>(value) {
                 Ok(ws) if !ws.id.is_empty() => data.workspaces.push(ws),
@@ -282,7 +282,7 @@ pub fn read_all(root: &Path) -> (RepoData, Vec<String>) {
                 Ok(f) => data.environments.push(f.environment),
                 Err(e) => warnings.push(format!("{path}: {e}")),
             },
-            _ => warnings.push(format!("{path}: not a Yaak Lite file — ignored")),
+            _ => warnings.push(format!("{path}: not a Zorvilo file — ignored")),
         }
     }
     (data, warnings)
@@ -435,7 +435,7 @@ mod tests {
 
     #[test]
     fn write_read_round_trip_with_redaction() {
-        let dir = std::env::temp_dir().join(format!("yaak-layout-{}-{}", std::process::id(), zorvilo_core::ids::now_ms()));
+        let dir = std::env::temp_dir().join(format!("zorvilo-layout-{}-{}", std::process::id(), zorvilo_core::ids::now_ms()));
         let data = sample();
         let s = write_all(&dir, &data, true).unwrap();
         assert_eq!(s.written, 3);

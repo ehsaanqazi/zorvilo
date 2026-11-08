@@ -9,7 +9,7 @@
 //! Isolation model:
 //! * every script runs in a fresh `Context` on a dedicated thread;
 //! * no filesystem, process, timers or module loading are exposed;
-//! * the only host function is `__yaak_send` (pm.sendRequest), registered
+//! * the only host function is `__zorvilo_send` (pm.sendRequest), registered
 //!   only when allowed in settings;
 //! * a wall-clock timeout plus loop-iteration/recursion limits stop runaway
 //!   scripts; on timeout the result is discarded and the thread is left to
@@ -227,7 +227,7 @@ fn perform_send(payload: &str) -> String {
 fn native_send(_this: &JsValue, args: &[JsValue], ctx: &mut Context) -> JsResult<JsValue> {
     let arg = args.first().cloned().unwrap_or_else(JsValue::undefined);
     if arg.is_undefined() {
-        return Err(JsNativeError::typ().with_message("__yaak_send expects a JSON string").into());
+        return Err(JsNativeError::typ().with_message("__zorvilo_send expects a JSON string").into());
     }
     let payload = arg.to_string(ctx)?.to_std_string_escaped();
     let out = perform_send(&payload);
@@ -243,7 +243,7 @@ fn run_in_boa(source: &str, ctx_json: &str, limits: &ScriptLimits) -> Result<Str
         SEND_TIMEOUT_MS.with(|c| c.set(limits.send_request_timeout_ms));
         SEND_VERIFY_TLS.with(|c| c.set(limits.verify_tls));
         context
-            .register_global_callable(js_string!("__yaak_send"), 1, NativeFunction::from_fn_ptr(native_send))
+            .register_global_callable(js_string!("__zorvilo_send"), 1, NativeFunction::from_fn_ptr(native_send))
             .map_err(|e| format!("failed to install pm.sendRequest: {e}"))?;
     }
 
@@ -260,7 +260,7 @@ fn run_in_boa(source: &str, ctx_json: &str, limits: &ScriptLimits) -> Result<Str
     let _ = context.run_jobs();
 
     let result = context
-        .eval(Source::from_bytes(b"__yaak_result()".as_slice()))
+        .eval(Source::from_bytes(b"__zorvilo_result()".as_slice()))
         .map_err(|e| format!("could not collect script results: {e}"))?;
     let mut json = result.to_string(&mut context).map_err(|e| e.to_string())?.to_std_string_escaped();
     if let Some(err) = syntax_or_sync_error {

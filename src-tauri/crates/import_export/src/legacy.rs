@@ -4,10 +4,10 @@
 //! cannot read. Supported migration inputs, all produced by the legacy app
 //! itself:
 //!
-//! * **Workspace bundle** (`Workspaces → Export`, `__yaakLite: "workspace-bundle"`)
-//! * **Git repository files** (`__yaakLite: "collection" | "environment"`) —
+//! * **Workspace bundle** (`Workspaces → Export`, `__zorvilo: "workspace-bundle"`)
+//! * **Git repository files** (`__zorvilo: "collection" | "environment"`) —
 //!   point the new app at the same repo, or import the files directly
-//! * **History / saved responses exports** (`__yaakLite: "history" | "saved-responses"`)
+//! * **History / saved responses exports** (`__zorvilo: "history" | "saved-responses"`)
 //!
 //! Records keep their original ids. Unknown fields are preserved in each
 //! model's `extra` map. Invalid records are reported, never silently dropped.
@@ -79,9 +79,9 @@ fn decode_list<T: serde::de::DeserializeOwned>(
     out
 }
 
-/// Parse any legacy Yaak Lite export.
+/// Parse any legacy Zorvilo export.
 pub fn import_legacy(json: &Value) -> ImportResult<LegacyImport> {
-    let tag = json.get("__yaakLite").and_then(Value::as_str).unwrap_or("");
+    let tag = json.get("__zorvilo").and_then(Value::as_str).unwrap_or("");
     let mut out = LegacyImport::default();
     match tag {
         "workspace-bundle" => {
@@ -124,7 +124,7 @@ pub fn import_legacy(json: &Value) -> ImportResult<LegacyImport> {
         },
         "history" => out.history = decode_list(json.get("entries"), "history entry", &mut out.report, |_| false),
         "saved-responses" => out.saved_responses = decode_list(json.get("responses"), "saved response", &mut out.report, |_| false),
-        _ => return Err(ImportError::Invalid("not a Yaak Lite export".into())),
+        _ => return Err(ImportError::Invalid("not a Zorvilo export".into())),
     }
     validate(&mut out);
     Ok(out)
@@ -207,7 +207,7 @@ pub fn export_workspace_bundle(
     let environments: Vec<Environment> = environments.iter().map(|e| Environment { variables: strip(&e.variables), ..e.clone() }).collect();
     let requests: Vec<ApiRequest> = requests.iter().map(|r| ApiRequest { variables: strip(&r.variables), ..r.clone() }).collect();
     serde_json::json!({
-        "__yaakLite": "workspace-bundle",
+        "__zorvilo": "workspace-bundle",
         "version": 1,
         "workspace": workspace,
         "collections": collections,

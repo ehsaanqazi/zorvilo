@@ -67,7 +67,7 @@ mod tests {
 
     #[test]
     fn response_path_is_sanitised() {
-        let dir = std::env::temp_dir().join(format!("yaak-paths-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("zorvilo-paths-{}", std::process::id()));
         let p = AppPaths::at(&dir).unwrap();
         let path = p.response_body_path("../../etc/passwd");
         assert!(path.starts_with(&p.responses_dir));
