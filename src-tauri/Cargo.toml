@@ -1,0 +1,132 @@
+[package]
+name = "zorvilo"
+description = "Zorvilo — local-first desktop API client"
+default-run = "zorvilo"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+
+[lib]
+name = "zorvilo_lib"
+path = "src/lib.rs"
+
+[[bin]]
+name = "zorvilo"
+path = "src/main.rs"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+zorvilo-core.workspace = true
+zorvilo-http.workspace = true
+zorvilo-scripting.workspace = true
+zorvilo-realtime.workspace = true
+zorvilo-storage.workspace = true
+zorvilo-git.workspace = true
+zorvilo-import-export.workspace = true
+zorvilo-runner.workspace = true
+tauri = { version = "2", features = [] }
+tauri-plugin-dialog = "2"
+tauri-plugin-clipboard-manager = "2"
+tauri-plugin-deep-link = "2"
+git2.workspace = true
+reqwest.workspace = true
+directories.workspace = true
+tokio.workspace = true
+tokio-util.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+base64.workspace = true
+rustls.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+thiserror.workspace = true
+webbrowser.workspace = true
+
+[target.'cfg(any(target_os = "windows", target_os = "linux"))'.dependencies]
+tauri-plugin-single-instance = { version = "2", features = ["deep-link"] }
+
+[features]
+# Tauri sets this for production builds (`tauri build`): serve the bundled frontend.
+custom-protocol = ["tauri/custom-protocol"]
+
+[workspace]
+resolver = "2"
+members = [
+    ".",
+    "crates/core",
+    "crates/http_engine",
+    "crates/scripting",
+    "crates/realtime",
+    "crates/storage",
+    "crates/git_engine",
+    "crates/import_export",
+    "crates/collection_runner",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.82"
+license = "MIT"
+authors = ["Zorvilo contributors"]
+
+[workspace.dependencies]
+# internal crates
+zorvilo-core = { path = "crates/core" }
+zorvilo-http = { path = "crates/http_engine" }
+zorvilo-scripting = { path = "crates/scripting" }
+zorvilo-realtime = { path = "crates/realtime" }
+zorvilo-storage = { path = "crates/storage" }
+zorvilo-git = { path = "crates/git_engine" }
+zorvilo-import-export = { path = "crates/import_export" }
+zorvilo-runner = { path = "crates/collection_runner" }
+yaak-ui = { path = "crates/ui" }
+
+# async / networking
+tokio = { version = "1.40", features = ["rt-multi-thread", "macros", "sync", "time", "net", "io-util", "fs"] }
+tokio-util = "0.7"
+futures-util = { version = "0.3", default-features = false, features = ["sink", "std"] }
+reqwest = { version = "0.12.8", default-features = false, features = ["rustls-tls", "rustls-tls-native-roots", "cookies", "gzip", "brotli", "deflate", "socks", "blocking", "http2", "charset"] }
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12", "logging"] }
+tokio-tungstenite = { version = "0.24", default-features = false, features = ["connect", "handshake", "rustls-tls-webpki-roots"] }
+url = "2.5"
+percent-encoding = "2.3"
+webbrowser = "1.0"
+
+# data
+serde = { version = "1.0", features = ["derive"] }
+serde_json = { version = "1.0", features = ["preserve_order"] }
+rusqlite = { version = "0.32", features = ["bundled"] }
+keyring = { version = "3.6", features = ["apple-native", "windows-native", "sync-secret-service", "crypto-rust"] }
+directories = "5.0"
+git2 = { version = "0.19", default-features = false, features = ["https", "vendored-libgit2"] }
+boa_engine = "0.20"
+
+# crypto / encoding
+md-5 = "0.10"
+sha2 = "0.10"
+hmac = "0.12"
+base64 = "0.22"
+hex = "0.4"
+rand = "0.8"
+uuid = { version = "1.10", features = ["v4", "serde"] }
+chrono = { version = "0.4.38", default-features = false, features = ["clock", "std", "serde"] }
+regex = "1.11"
+
+# errors / logging
+thiserror = "1.0"
+anyhow = "1.0"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = "symbols"
+
+[profile.dev.package."*"]
+opt-level = 2

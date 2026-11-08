@@ -1,0 +1,16 @@
+[package]
+name = "zorvilo-core"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "Domain models, variable engine and pure request logic for Zorvilo"
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+uuid.workspace = true
+chrono.workspace = true
+rand.workspace = true
+regex.workspace = true
+thiserror.workspace = true

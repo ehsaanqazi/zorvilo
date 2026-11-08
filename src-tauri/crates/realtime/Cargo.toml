@@ -1,0 +1,16 @@
+[package]
+name = "zorvilo-realtime"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "WebSocket and Socket.IO clients for Zorvilo"
+
+[dependencies]
+tokio.workspace = true
+tokio-tungstenite.workspace = true
+futures-util.workspace = true
+url.workspace = true
+serde_json.workspace = true
+chrono.workspace = true
+tracing.workspace = true

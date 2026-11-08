@@ -1,0 +1,27 @@
+[package]
+name = "zorvilo-http"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "Native HTTP engine (reqwest/tokio) with authentication for Zorvilo"
+
+[dependencies]
+zorvilo-core.workspace = true
+tokio.workspace = true
+tokio-util.workspace = true
+reqwest.workspace = true
+url.workspace = true
+percent-encoding.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+md-5.workspace = true
+sha2.workspace = true
+hmac.workspace = true
+base64.workspace = true
+hex.workspace = true
+rand.workspace = true
+chrono.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+webbrowser.workspace = true
