@@ -5,6 +5,10 @@ and Linux. Local-first, offline-capable and Git-backed: data lives in a local SQ
 (secrets in the OS keychain), and your collections live as reviewable JSON files in a Git
 repository.
 
+
+<img width="1108" height="538" alt="Screenshot 2026-11-09 at 10 10 01 AM" src="https://github.com/user-attachments/assets/b49a8602-e74c-4b51-ad75-4fc3431140eb" />
+
+
 ## Tech Stack
 
 **UI:** React 19 · TypeScript (strict) · Vite · Tailwind CSS v4 · shadcn/ui-style components ·
