@@ -21,53 +21,107 @@ jobs:
             bundle_dir: src-tauri/target/aarch64-apple-darwin/release/bundle
             os: macos
             arch: arm64
+
           - platform: macos-latest
             args: --target x86_64-apple-darwin
             rust_targets: x86_64-apple-darwin
             bundle_dir: src-tauri/target/x86_64-apple-darwin/release/bundle
             os: macos
             arch: x64
+
           - platform: windows-latest
             args: ''
             rust_targets: ''
             bundle_dir: src-tauri/target/release/bundle
             os: windows
             arch: x64
+
           - platform: ubuntu-22.04
             args: ''
             rust_targets: ''
             bundle_dir: src-tauri/target/release/bundle
             os: linux
             arch: x64
-    runs-on: ${{ matrix.platform }}
-    steps:
-      - uses: actions/checkout@v4
 
+    runs-on: ${{ matrix.platform }}
+
+    steps:
+      # Checkout
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Linux dependencies
       - name: Install Linux dependencies
         if: matrix.platform == 'ubuntu-22.04'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential libssl-dev libdbus-1-dev libxdo-dev libayatana-appindicator3-dev librsvg2-dev patchelf
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            build-essential \
+            libssl-dev \
+            libdbus-1-dev \
+            libxdo-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            patchelf
 
-      - uses: actions/setup-node@v4
+      # Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
 
-      - uses: dtolnay/rust-toolchain@stable
+      # Rust
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.rust_targets }}
 
-      - uses: swatinem/rust-cache@v2
+      # Rust cache
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
         with:
           workspaces: './src-tauri -> target'
 
+      # Frontend dependencies
       - name: Install frontend dependencies
         run: npm ci
 
-      # Optional Developer ID signing + notarization. Without these secrets the
-      # app is ad-hoc signed (bundle.macOS.signingIdentity = "-"), which installs
-      # and runs but Gatekeeper asks the user to approve it once.
+      # Resolve Tauri tools cache directory
+      - name: Resolve Tauri tools cache directory
+        if: matrix.platform == 'windows-latest'
+        id: tauri-cache
+        shell: pwsh
+        run: |
+          $cachePath = Join-Path $env:LOCALAPPDATA "tauri\NSIS"
+
+          "path=$cachePath" >> $env:GITHUB_OUTPUT
+
+          Write-Host "Tauri NSIS cache directory: $cachePath"
+
+      # Restore NSIS cache
+      - name: Restore NSIS cache
+        if: matrix.platform == 'windows-latest'
+        id: nsis-cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.tauri-cache.outputs.path }}
+          key: tauri-nsis-3.13-windows-x64-v1
+
+      # Cache information
+      - name: Show NSIS cache status
+        if: matrix.platform == 'windows-latest'
+        shell: pwsh
+        run: |
+          if ("${{ steps.nsis-cache.outputs.cache-hit }}" -eq "true") {
+            Write-Host "NSIS cache HIT - reusing cached NSIS installation."
+          }
+          else {
+            Write-Host "NSIS cache MISS - Tauri will download NSIS if needed."
+          }
+
+      # Apple signing
       - name: Configure Apple signing
         if: startsWith(matrix.platform, 'macos')
         shell: bash
@@ -79,31 +133,41 @@ jobs:
           APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
-          if [ -n "$APPLE_CERTIFICATE" ] && [ -n "$APPLE_CERTIFICATE_PASSWORD" ] && [ -n "$APPLE_SIGNING_IDENTITY" ]; then
+          if [ -n "$APPLE_CERTIFICATE" ] && \
+             [ -n "$APPLE_CERTIFICATE_PASSWORD" ] && \
+             [ -n "$APPLE_SIGNING_IDENTITY" ]; then
+
             {
               echo "APPLE_CERTIFICATE=$APPLE_CERTIFICATE"
               echo "APPLE_CERTIFICATE_PASSWORD=$APPLE_CERTIFICATE_PASSWORD"
               echo "APPLE_SIGNING_IDENTITY=$APPLE_SIGNING_IDENTITY"
             } >> "$GITHUB_ENV"
-            if [ -n "$APPLE_ID" ] && [ -n "$APPLE_PASSWORD" ] && [ -n "$APPLE_TEAM_ID" ]; then
+
+            if [ -n "$APPLE_ID" ] && \
+               [ -n "$APPLE_PASSWORD" ] && \
+               [ -n "$APPLE_TEAM_ID" ]; then
+
               {
                 echo "APPLE_ID=$APPLE_ID"
                 echo "APPLE_PASSWORD=$APPLE_PASSWORD"
                 echo "APPLE_TEAM_ID=$APPLE_TEAM_ID"
               } >> "$GITHUB_ENV"
             fi
+
             echo "Developer ID signing enabled."
           else
             echo "No Apple certificate configured; using ad-hoc signing."
           fi
 
-      - uses: tauri-apps/tauri-action@v0
+      # Build and create GitHub release
+      - name: Build Tauri application
         id: tauri
+        uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tagName: ${{ github.ref_type == 'tag' && github.ref_name || 'v__VERSION__' }}
-          releaseName: 'Zorvilo ${{ github.ref_type == ''tag'' && github.ref_name || ''v__VERSION__'' }}'
+          releaseName: 'Zorvilo ${{ github.ref_type == 'tag' && github.ref_name || 'v__VERSION__' }}'
           releaseBody: |
             Download the installer for your platform from **Assets** below.
 
@@ -114,15 +178,17 @@ jobs:
             | Windows | `Zorvilo-windows-x64-setup.exe` (or `.msi`) |
             | Linux | `Zorvilo-linux-x64.AppImage`, `.deb` or `.rpm` |
 
-            **macOS:** if macOS says the app can't be opened, right-click Zorvilo in Applications and choose **Open**, or run `xattr -cr /Applications/Zorvilo.app`.
-            **Windows:** if SmartScreen appears, click **More info → Run anyway**.
-            **Linux (AppImage):** `chmod +x Zorvilo-linux-x64.AppImage` and run it.
+            **macOS:** if macOS says the app can't be opened, right-click Zorvilo in Applications and choose Open, or run `xattr -cr /Applications/Zorvilo.app`.
+
+            **Windows:** if SmartScreen appears, click More info → Run anyway.
+
+            **Linux (AppImage):** run `chmod +x Zorvilo-linux-x64.AppImage` and launch it.
+
           releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}
 
-      # Upload version-less copies (e.g. Zorvilo-macos-arm64.dmg) so the website can link
-      # to https://github.com/<repo>/releases/latest/download/<file> for one-click downloads.
+      # Upload stable-named installers
       - name: Upload stable-named installers
         shell: bash
         env:
@@ -130,21 +196,60 @@ jobs:
           TAG: ${{ github.ref_type == 'tag' && github.ref_name || format('v{0}', steps.tauri.outputs.appVersion) }}
           BUNDLE: ${{ matrix.bundle_dir }}
           PREFIX: Zorvilo-${{ matrix.os }}-${{ matrix.arch }}
+
         run: |
           set -euo pipefail
+
           shopt -s nullglob
+
           out="$RUNNER_TEMP/stable"
           mkdir -p "$out"
-          copy() { for f in $1; do cp "$f" "$out/$2"; return; done; }
-          copy "$BUNDLE/dmg/*.dmg"            "$PREFIX.dmg"
-          copy "$BUNDLE/nsis/*-setup.exe"     "$PREFIX-setup.exe"
-          copy "$BUNDLE/msi/*.msi"            "$PREFIX.msi"
-          copy "$BUNDLE/appimage/*.AppImage"  "$PREFIX.AppImage"
-          copy "$BUNDLE/deb/*.deb"            "$PREFIX.deb"
-          copy "$BUNDLE/rpm/*.rpm"            "$PREFIX.rpm"
+
+          copy() {
+            local pattern="$1"
+            local destination="$2"
+
+            local files=( $pattern )
+
+            if [ ${#files[@]} -gt 0 ]; then
+              cp "${files[0]}" "$out/$destination"
+              echo "Prepared $destination"
+            fi
+          }
+
+          # macOS
+          copy "$BUNDLE/dmg/*.dmg" \
+            "$PREFIX.dmg"
+
+          # Windows NSIS
+          copy "$BUNDLE/nsis/*-setup.exe" \
+            "$PREFIX-setup.exe"
+
+          # Windows MSI
+          copy "$BUNDLE/msi/*.msi" \
+            "$PREFIX.msi"
+
+          # Linux AppImage
+          copy "$BUNDLE/appimage/*.AppImage" \
+            "$PREFIX.AppImage"
+
+          # Linux DEB
+          copy "$BUNDLE/deb/*.deb" \
+            "$PREFIX.deb"
+
+          # Linux RPM
+          copy "$BUNDLE/rpm/*.rpm" \
+            "$PREFIX.rpm"
+
           files=("$out"/*)
+
           if [ ${#files[@]} -eq 0 ]; then
             echo "No installers found in $BUNDLE" >&2
             exit 1
           fi
-          gh release upload "$TAG" "${files[@]}" --clobber --repo "$GITHUB_REPOSITORY"
+
+          echo "Uploading stable-named installers..."
+
+          gh release upload "$TAG" "${files[@]}" \
+            --clobber \
+            --repo "$GITHUB_REPOSITORY"
