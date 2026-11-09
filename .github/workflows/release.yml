@@ -88,38 +88,69 @@ jobs:
       - name: Install frontend dependencies
         run: npm ci
 
-      # Resolve Tauri tools cache directory
+      # Resolve Tauri tools cache directory (holds NSIS + WiX downloads)
       - name: Resolve Tauri tools cache directory
         if: matrix.platform == 'windows-latest'
         id: tauri-cache
         shell: pwsh
         run: |
-          $cachePath = Join-Path $env:LOCALAPPDATA "tauri\NSIS"
+          $cachePath = Join-Path $env:LOCALAPPDATA "tauri"
 
           "path=$cachePath" >> $env:GITHUB_OUTPUT
 
-          Write-Host "Tauri NSIS cache directory: $cachePath"
+          Write-Host "Tauri tools cache directory: $cachePath"
 
-      # Restore NSIS cache
-      - name: Restore NSIS cache
+      # Restore Tauri tools cache
+      - name: Restore Tauri tools cache
         if: matrix.platform == 'windows-latest'
-        id: nsis-cache
+        id: tools-cache
         uses: actions/cache@v4
         with:
           path: ${{ steps.tauri-cache.outputs.path }}
-          key: tauri-nsis-3.13-windows-x64-v1
+          key: tauri-tools-nsis-3.13-wix314-windows-x64-v2
 
-      # Cache information
-      - name: Show NSIS cache status
-        if: matrix.platform == 'windows-latest'
+      # Pre-download NSIS with retries so a transient GitHub 5xx doesn't fail the bundle
+      - name: Pre-download NSIS
+        if: matrix.platform == 'windows-latest' && steps.tools-cache.outputs.cache-hit != 'true'
         shell: pwsh
         run: |
-          if ("${{ steps.nsis-cache.outputs.cache-hit }}" -eq "true") {
-            Write-Host "NSIS cache HIT - reusing cached NSIS installation."
+          $toolsDir = "${{ steps.tauri-cache.outputs.path }}"
+          $nsisDir = Join-Path $toolsDir "NSIS"
+          $zip = Join-Path $env:RUNNER_TEMP "nsis-3.13.zip"
+          $url = "https://github.com/tauri-apps/binary-releases/releases/download/nsis-3.13/nsis-3.13.zip"
+
+          if (Test-Path (Join-Path $nsisDir "makensis.exe")) {
+            Write-Host "NSIS already present."
+            exit 0
           }
-          else {
-            Write-Host "NSIS cache MISS - Tauri will download NSIS if needed."
+
+          New-Item -ItemType Directory -Force -Path $toolsDir | Out-Null
+
+          $ok = $false
+          for ($i = 1; $i -le 6; $i++) {
+            try {
+              Write-Host "Downloading NSIS (attempt $i)..."
+              Invoke-WebRequest -Uri $url -OutFile $zip -UseBasicParsing
+              $ok = $true
+              break
+            }
+            catch {
+              Write-Warning "Attempt $i failed: $($_.Exception.Message)"
+              Start-Sleep -Seconds (15 * $i)
+            }
           }
+
+          if (-not $ok) {
+            Write-Warning "Could not pre-download NSIS; Tauri will try itself."
+            exit 0
+          }
+
+          $extract = Join-Path $env:RUNNER_TEMP "nsis-extract"
+          Expand-Archive -Path $zip -DestinationPath $extract -Force
+          $inner = Get-ChildItem -Path $extract -Directory | Select-Object -First 1
+          if (Test-Path $nsisDir) { Remove-Item -Recurse -Force $nsisDir }
+          Move-Item -Path $inner.FullName -Destination $nsisDir
+          Write-Host "NSIS installed to $nsisDir"
 
       # Apple signing
       - name: Configure Apple signing
@@ -159,15 +190,85 @@ jobs:
             echo "No Apple certificate configured; using ad-hoc signing."
           fi
 
-      # Build and create GitHub release
+      # Build and create GitHub release (retried to survive transient download errors)
       - name: Build Tauri application
         id: tauri
+        continue-on-error: true
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tagName: ${{ github.ref_type == 'tag' && github.ref_name || 'v__VERSION__' }}
-          releaseName: 'Zorvilo ${{ github.ref_type == 'tag' && github.ref_name || 'v__VERSION__' }}'
+          releaseName: "Zorvilo ${{ github.ref_type == 'tag' && github.ref_name || 'v__VERSION__' }}"
+          releaseBody: |
+            Download the installer for your platform from **Assets** below.
+
+            | Platform | File |
+            | --- | --- |
+            | macOS (Apple Silicon) | `Zorvilo-macos-arm64.dmg` |
+            | macOS (Intel) | `Zorvilo-macos-x64.dmg` |
+            | Windows | `Zorvilo-windows-x64-setup.exe` (or `.msi`) |
+            | Linux | `Zorvilo-linux-x64.AppImage`, `.deb` or `.rpm` |
+
+            **macOS:** if macOS says the app can't be opened, right-click Zorvilo in Applications and choose Open, or run `xattr -cr /Applications/Zorvilo.app`.
+
+            **Windows:** if SmartScreen appears, click More info → Run anyway.
+
+            **Linux (AppImage):** run `chmod +x Zorvilo-linux-x64.AppImage` and launch it.
+
+          releaseDraft: false
+          prerelease: false
+          args: ${{ matrix.args }}
+
+      - name: Wait before retry
+        if: steps.tauri.outcome == 'failure'
+        shell: bash
+        run: sleep 60
+
+      - name: Build Tauri application (retry 1)
+        id: tauri_retry1
+        if: steps.tauri.outcome == 'failure'
+        continue-on-error: true
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.ref_type == 'tag' && github.ref_name || 'v__VERSION__' }}
+          releaseName: "Zorvilo ${{ github.ref_type == 'tag' && github.ref_name || 'v__VERSION__' }}"
+          releaseBody: |
+            Download the installer for your platform from **Assets** below.
+
+            | Platform | File |
+            | --- | --- |
+            | macOS (Apple Silicon) | `Zorvilo-macos-arm64.dmg` |
+            | macOS (Intel) | `Zorvilo-macos-x64.dmg` |
+            | Windows | `Zorvilo-windows-x64-setup.exe` (or `.msi`) |
+            | Linux | `Zorvilo-linux-x64.AppImage`, `.deb` or `.rpm` |
+
+            **macOS:** if macOS says the app can't be opened, right-click Zorvilo in Applications and choose Open, or run `xattr -cr /Applications/Zorvilo.app`.
+
+            **Windows:** if SmartScreen appears, click More info → Run anyway.
+
+            **Linux (AppImage):** run `chmod +x Zorvilo-linux-x64.AppImage` and launch it.
+
+          releaseDraft: false
+          prerelease: false
+          args: ${{ matrix.args }}
+
+      - name: Wait before final retry
+        if: steps.tauri.outcome == 'failure' && steps.tauri_retry1.outcome == 'failure'
+        shell: bash
+        run: sleep 120
+
+      - name: Build Tauri application (retry 2)
+        id: tauri_retry2
+        if: steps.tauri.outcome == 'failure' && steps.tauri_retry1.outcome == 'failure'
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.ref_type == 'tag' && github.ref_name || 'v__VERSION__' }}
+          releaseName: "Zorvilo ${{ github.ref_type == 'tag' && github.ref_name || 'v__VERSION__' }}"
           releaseBody: |
             Download the installer for your platform from **Assets** below.
 
@@ -193,7 +294,7 @@ jobs:
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG: ${{ github.ref_type == 'tag' && github.ref_name || format('v{0}', steps.tauri.outputs.appVersion) }}
+          TAG: ${{ github.ref_type == 'tag' && github.ref_name || format('v{0}', steps.tauri.outputs.appVersion || steps.tauri_retry1.outputs.appVersion || steps.tauri_retry2.outputs.appVersion) }}
           BUNDLE: ${{ matrix.bundle_dir }}
           PREFIX: Zorvilo-${{ matrix.os }}-${{ matrix.arch }}
 
