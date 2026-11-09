@@ -18,15 +18,27 @@ jobs:
           - platform: macos-latest
             args: --target aarch64-apple-darwin
             rust_targets: aarch64-apple-darwin
+            bundle_dir: src-tauri/target/aarch64-apple-darwin/release/bundle
+            os: macos
+            arch: arm64
           - platform: macos-latest
             args: --target x86_64-apple-darwin
             rust_targets: x86_64-apple-darwin
+            bundle_dir: src-tauri/target/x86_64-apple-darwin/release/bundle
+            os: macos
+            arch: x64
           - platform: windows-latest
             args: ''
             rust_targets: ''
+            bundle_dir: src-tauri/target/release/bundle
+            os: windows
+            arch: x64
           - platform: ubuntu-22.04
             args: ''
             rust_targets: ''
+            bundle_dir: src-tauri/target/release/bundle
+            os: linux
+            arch: x64
     runs-on: ${{ matrix.platform }}
     steps:
       - uses: actions/checkout@v4
@@ -86,6 +98,7 @@ jobs:
           fi
 
       - uses: tauri-apps/tauri-action@v0
+        id: tauri
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -95,3 +108,31 @@ jobs:
           releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}
+
+      # Upload version-less copies (e.g. Zorvilo-macos-arm64.dmg) so the website can link
+      # to https://github.com/<repo>/releases/latest/download/<file> for one-click downloads.
+      - name: Upload stable-named installers
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_type == 'tag' && github.ref_name || format('v{0}', steps.tauri.outputs.appVersion) }}
+          BUNDLE: ${{ matrix.bundle_dir }}
+          PREFIX: Zorvilo-${{ matrix.os }}-${{ matrix.arch }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          out="$RUNNER_TEMP/stable"
+          mkdir -p "$out"
+          copy() { for f in $1; do cp "$f" "$out/$2"; return; done; }
+          copy "$BUNDLE/dmg/*.dmg"            "$PREFIX.dmg"
+          copy "$BUNDLE/nsis/*-setup.exe"     "$PREFIX-setup.exe"
+          copy "$BUNDLE/msi/*.msi"            "$PREFIX.msi"
+          copy "$BUNDLE/appimage/*.AppImage"  "$PREFIX.AppImage"
+          copy "$BUNDLE/deb/*.deb"            "$PREFIX.deb"
+          copy "$BUNDLE/rpm/*.rpm"            "$PREFIX.rpm"
+          files=("$out"/*)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "No installers found in $BUNDLE" >&2
+            exit 1
+          fi
+          gh release upload "$TAG" "${files[@]}" --clobber --repo "$GITHUB_REPOSITORY"

@@ -103,7 +103,7 @@ serde_json = { version = "1.0", features = ["preserve_order"] }
 rusqlite = { version = "0.32", features = ["bundled"] }
 keyring = { version = "3.6", features = ["apple-native", "windows-native", "sync-secret-service", "crypto-rust"] }
 directories = "5.0"
-git2 = { version = "0.19", default-features = false, features = ["https", "vendored-libgit2"] }
+git2 = { version = "0.19", default-features = false, features = ["https", "vendored-libgit2", "vendored-openssl"] }
 boa_engine = "0.20"
 
 # crypto / encoding
