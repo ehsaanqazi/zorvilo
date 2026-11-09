@@ -1,22 +1,12 @@
 import * as React from 'react';
 import { Download, ExternalLink, RefreshCw } from 'lucide-react';
-import { invoke } from '@/platform/tauri';
 import { openExternal } from '@/platform/system';
 import { toast } from '@/store/ui';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Pane, Row } from './shared';
 import { RELEASES_URL, UPDATE_REPO, useAppInfo } from './appMeta';
-
-interface UpdateInfo {
-  current: string;
-  latest: string;
-  updateAvailable: boolean;
-  releaseName: string;
-  notes: string;
-  releaseUrl: string;
-  asset: { name: string; url: string; size: number } | null;
-}
+import { checkForUpdate, clearUpdatePrompts, installUpdate, type UpdateInfo } from './updates';
 
 /** Check GitHub Releases for a newer version and install it. */
 export function UpdatesPane() {
@@ -30,7 +20,7 @@ export function UpdatesPane() {
     setChecking(true);
     setInfo(null);
     try {
-      const result = await invoke<UpdateInfo>('update_check', { repo });
+      const result = await checkForUpdate();
       setInfo(result);
       if (!result.updateAvailable)
         toast('success', `You're on the latest version (${result.current})`);
@@ -45,10 +35,8 @@ export function UpdatesPane() {
     if (!info?.asset) return;
     setInstalling(true);
     try {
-      const path = await invoke<string>('update_install', {
-        url: info.asset.url,
-        name: info.asset.name,
-      });
+      const path = await installUpdate(info.asset);
+      clearUpdatePrompts();
       toast(
         'success',
         `Zorvilo ${info.latest} downloaded`,

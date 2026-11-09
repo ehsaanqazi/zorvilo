@@ -11,6 +11,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/misc';
 import { CommandPalette } from '@/components/command/CommandPalette';
 import { SettingsDialog } from '@/components/settings/SettingsDialog';
+import { UpdateDialog } from '@/components/settings/UpdateDialog';
 import { GitDialog } from '@/components/git/GitDialog';
 import { EnvironmentsDialog } from '@/components/environments/EnvironmentsDialog';
 import { ImportDialog } from '@/components/importer/ImportDialog';
@@ -113,6 +114,7 @@ export default function App() {
       <ConfirmDialog />
       <ChoiceDialog />
       <TextPromptDialog />
+      <UpdateDialog />
       <Toaster />
     </TooltipProvider>
   );
