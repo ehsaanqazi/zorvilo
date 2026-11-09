@@ -38,6 +38,12 @@ fn forward_deep_links(app: &tauri::AppHandle, urls: Vec<String>) {
 }
 
 pub fn run() {
+    // WebKitGTK's DMA-BUF renderer shows a blank window on many NVIDIA/Wayland setups.
+    #[cfg(target_os = "linux")]
+    if std::env::var_os("WEBKIT_DISABLE_DMABUF_RENDERER").is_none() {
+        std::env::set_var("WEBKIT_DISABLE_DMABUF_RENDERER", "1");
+    }
+
     // rustls 0.23 needs exactly one process-wide crypto provider.
     let _ = rustls::crypto::ring::default_provider().install_default();
 
