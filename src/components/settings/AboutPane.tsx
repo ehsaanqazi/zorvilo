@@ -30,11 +30,6 @@ export function AboutPane() {
           {info?.dataDir ?? '—'}
         </span>
       </Row>
-      <Row label="OS keychain" hint="Used to store secret values">
-        <span className="text-xs">
-          {info ? (info.keychainAvailable ? 'Available' : 'Unavailable') : '—'}
-        </span>
-      </Row>
       {info && info.notes.length > 0 && (
         <ul className="flex list-disc flex-col gap-1 pl-5 text-xs text-muted-foreground">
           {info.notes.map((n) => (

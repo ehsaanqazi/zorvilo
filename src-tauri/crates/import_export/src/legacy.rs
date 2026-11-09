@@ -81,7 +81,7 @@ fn decode_list<T: serde::de::DeserializeOwned>(
 
 /// Parse any legacy Zorvilo export.
 pub fn import_legacy(json: &Value) -> ImportResult<LegacyImport> {
-    let tag = json.get("__zorvilo").and_then(Value::as_str).unwrap_or("");
+    let tag = json.get("__zorvilo").or_else(|| json.get("__yaakLite")).and_then(Value::as_str).unwrap_or("");
     let mut out = LegacyImport::default();
     match tag {
         "workspace-bundle" => {

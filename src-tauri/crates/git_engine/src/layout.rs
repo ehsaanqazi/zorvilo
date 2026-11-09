@@ -26,7 +26,7 @@ pub struct RepoData {
 
 #[derive(Serialize, Deserialize)]
 struct CollectionFile {
-    #[serde(rename = "__zorvilo")]
+    #[serde(rename = "__zorvilo", alias = "__yaakLite")]
     tag: String,
     version: u32,
     collection: Collection,
@@ -38,7 +38,7 @@ struct CollectionFile {
 
 #[derive(Serialize, Deserialize)]
 struct EnvironmentFile {
-    #[serde(rename = "__zorvilo")]
+    #[serde(rename = "__zorvilo", alias = "__yaakLite")]
     tag: String,
     version: u32,
     environment: Environment,
@@ -260,7 +260,8 @@ pub fn read_all(root: &Path) -> (RepoData, Vec<String>) {
                 continue;
             }
         };
-        let tag = value.get("__zorvilo").and_then(|t| t.as_str()).unwrap_or("");
+        // files written by earlier versions of the app use the `__yaakLite` marker
+        let tag = value.get("__zorvilo").or_else(|| value.get("__yaakLite")).and_then(|t| t.as_str()).unwrap_or("");
         if path.ends_with("/workspace.json") && tag.is_empty() {
             match serde_json::from_value::<Workspace>(value) {
                 Ok(ws) if !ws.id.is_empty() => data.workspaces.push(ws),

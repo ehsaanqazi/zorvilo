@@ -41,7 +41,7 @@ pub enum ParsedImport {
     },
 }
 
-const SUPPORTED: &str = "Supported: Postman Collection v2.0/v2.1, Postman Environment, workspace bundle, cURL.";
+const SUPPORTED: &str = "Supported: Postman Collection v2.0/v2.1, Postman Environment, workspace bundle, Zorvilo collection/environment files, cURL.";
 
 /// Parse pasted text or file content into importable records for `workspace_id`.
 #[tauri::command(async)]

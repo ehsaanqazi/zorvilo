@@ -142,7 +142,7 @@ export function GitDialog() {
                 type="password"
                 value={m.token}
                 onChange={(token) => git.updateMeta({ token })}
-                placeholder="personal access token (stored in the OS keychain)"
+                placeholder="personal access token (stored locally on this machine)"
               />
               {!hasRepo && (
                 <Field
@@ -152,8 +152,6 @@ export function GitDialog() {
                   placeholder="main"
                 />
               )}
-              <Field label="Author name" value={m.authorName} onChange={(authorName) => git.updateMeta({ authorName })} placeholder="optional" />
-              <Field label="Author email" value={m.authorEmail} onChange={(authorEmail) => git.updateMeta({ authorEmail })} placeholder="optional" />
             </div>
 
             <div className="flex flex-wrap gap-2">
@@ -279,7 +277,7 @@ export function GitDialog() {
             <p className="text-[11px] leading-relaxed text-muted-foreground">
               Git runs natively (libgit2) against a working tree in Zorvilo&apos;s data folder, or in
               the repository folder you opened. Secret
-              variable values never leave this machine, and the token is kept in the OS keychain.
+              variable values never leave this machine, and the token is stored locally in Zorvilo&apos;s data folder.
               Conflicting pulls are detected and reported — your local commit is kept until you
               resolve it or use &quot;Pull latest&quot; to take the remote version.
             </p>

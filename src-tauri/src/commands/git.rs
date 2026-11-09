@@ -36,8 +36,9 @@ fn ctx(state: &AppState) -> CmdResult<GitCtx> {
         branch: if meta.branch.trim().is_empty() { "main".into() } else { meta.branch.trim().to_string() },
         // token-only auth: GitHub/GitLab accept any username with a PAT
         auth: GitAuth { username: if meta.username.trim().is_empty() { "x-access-token".into() } else { meta.username.trim().to_string() }, token },
-        author_name: if meta.author_name.trim().is_empty() { "Zorvilo".into() } else { meta.author_name.clone() },
-        author_email: if meta.author_email.trim().is_empty() { "zorvilo@localhost".into() } else { meta.author_email.clone() },
+        // commits always use the built-in identity — no personal name/email is read or stored
+        author_name: "Zorvilo".into(),
+        author_email: "zorvilo@localhost".into(),
     })
 }
 

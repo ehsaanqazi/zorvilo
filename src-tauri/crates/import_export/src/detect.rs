@@ -29,7 +29,8 @@ impl ImportKind {
 
 pub fn detect_import(json: &Value) -> ImportKind {
     let Some(obj) = json.as_object() else { return ImportKind::Unknown };
-    match obj.get("__zorvilo").and_then(Value::as_str) {
+    // files written by earlier versions of the app use the `__yaakLite` marker
+    match obj.get("__zorvilo").or_else(|| obj.get("__yaakLite")).and_then(Value::as_str) {
         Some("workspace-bundle") => return ImportKind::WorkspaceBundle,
         Some("collection") => return ImportKind::ZorviloCollectionFile,
         Some("environment") => return ImportKind::ZorviloEnvironmentFile,

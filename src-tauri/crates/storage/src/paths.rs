@@ -8,6 +8,8 @@ use crate::error::StorageResult;
 pub struct AppPaths {
     pub root: PathBuf,
     pub db_file: PathBuf,
+    /// local secret values (git token, secret variables), owner-only permissions
+    pub secrets_file: PathBuf,
     /// full response bodies referenced from history
     pub responses_dir: PathBuf,
     /// default Git working tree
@@ -37,6 +39,7 @@ impl AppPaths {
         let p = Self {
             root: root.to_path_buf(),
             db_file: root.join("zorvilo.sqlite3"),
+            secrets_file: root.join("secrets.json"),
             responses_dir: root.join("responses"),
             repo_dir: root.join("repo"),
             backups_dir: root.join("backups"),

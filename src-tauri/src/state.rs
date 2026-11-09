@@ -9,9 +9,7 @@ use zorvilo_http::HttpEngine;
 use zorvilo_realtime::RealtimeHandle;
 use zorvilo_storage::{AppPaths, Database, SecretStore};
 
-/// Keychain service name for every secret Zorvilo stores.
-pub const KEYCHAIN_SERVICE: &str = "dev.zorvilo.app";
-/// Keychain account holding the Git access token.
+/// Secret-store key holding the Git access token.
 pub const GIT_TOKEN_KEY: &str = "git:token";
 
 pub struct LiveConnection {
@@ -40,7 +38,7 @@ pub struct AppState {
 
 impl AppState {
     pub fn new(paths: AppPaths, startup_notes: Vec<String>) -> Self {
-        let secrets = Arc::new(SecretStore::new(KEYCHAIN_SERVICE));
+        let secrets = Arc::new(SecretStore::open(paths.secrets_file.clone()));
         let (db, db_error) = match Database::open(&paths.db_file) {
             Ok(db) => (Some(db), None),
             Err(e) => {
