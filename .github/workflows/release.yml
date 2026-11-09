@@ -104,7 +104,19 @@ jobs:
         with:
           tagName: ${{ github.ref_type == 'tag' && github.ref_name || 'v__VERSION__' }}
           releaseName: 'Zorvilo ${{ github.ref_type == ''tag'' && github.ref_name || ''v__VERSION__'' }}'
-          releaseBody: 'Download the installer for your platform below.'
+          releaseBody: |
+            Download the installer for your platform from **Assets** below.
+
+            | Platform | File |
+            | --- | --- |
+            | macOS (Apple Silicon) | `Zorvilo-macos-arm64.dmg` |
+            | macOS (Intel) | `Zorvilo-macos-x64.dmg` |
+            | Windows | `Zorvilo-windows-x64-setup.exe` (or `.msi`) |
+            | Linux | `Zorvilo-linux-x64.AppImage`, `.deb` or `.rpm` |
+
+            **macOS:** if macOS says the app can't be opened, right-click Zorvilo in Applications and choose **Open**, or run `xattr -cr /Applications/Zorvilo.app`.
+            **Windows:** if SmartScreen appears, click **More info → Run anyway**.
+            **Linux (AppImage):** `chmod +x Zorvilo-linux-x64.AppImage` and run it.
           releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}
