@@ -31,7 +31,7 @@ fn ctx(state: &AppState) -> CmdResult<GitCtx> {
     let meta: GitMeta = state.with_db(|db| Ok(db.load_git_meta()))?.unwrap_or_default();
     let token = state.secrets.get(GIT_TOKEN_KEY).unwrap_or_default();
     Ok(GitCtx {
-        dir: state.paths.repo_dir.clone(),
+        dir: if meta.dir.trim().is_empty() { state.paths.repo_dir.clone() } else { PathBuf::from(meta.dir.trim()) },
         remote: meta.repo_url.trim().to_string(),
         branch: if meta.branch.trim().is_empty() { "main".into() } else { meta.branch.trim().to_string() },
         // token-only auth: GitHub/GitLab accept any username with a PAT
@@ -250,6 +250,14 @@ pub async fn git_clone(app: AppHandle) -> CmdResult<ImportOutcome> {
         if c.remote.is_empty() {
             return Err("Enter a repository URL first".into());
         }
+        // clones always go into the app-managed working tree, never a user's own folder
+        let mut c = c;
+        c.dir = state.paths.repo_dir.clone();
+        state.with_db(|db| {
+            let mut meta = db.load_git_meta().unwrap_or_default();
+            meta.dir = String::new();
+            Database::put_git_meta(db.connection(), &meta).map_err(|e| e.to_string())
+        })?;
         // the working tree is app-managed: start from a clean directory
         if c.dir.exists() {
             std::fs::remove_dir_all(&c.dir).map_err(|e| format!("could not clear the old working tree: {e}"))?;
@@ -472,17 +480,45 @@ fn collect(root: &Path, dir: &Path, prefix: &str, out: &mut Vec<RepoFile>) -> Cm
     Ok(())
 }
 
-#[derive(Serialize, Default)]
+#[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct SystemIdentity {
-    name: Option<String>,
-    email: Option<String>,
+pub struct OpenLocalOutcome {
+    dir: String,
+    remote_url: String,
+    branch: String,
+    import: ImportOutcome,
 }
 
-/// `user.name` / `user.email` from the system Git configuration (global + system files), if set.
-#[tauri::command(async)]
-pub fn git_system_identity() -> SystemIdentity {
-    let Ok(cfg) = git2::Config::open_default() else { return SystemIdentity::default() };
-    let get = |k: &str| cfg.get_string(k).ok().map(|v| v.trim().to_string()).filter(|v| !v.is_empty());
-    SystemIdentity { name: get("user.name"), email: get("user.email") }
+/// Pick an existing repository folder on this machine, use it as the working
+/// tree and import its collections. Null when the picker is cancelled.
+#[tauri::command]
+pub async fn git_open_local(app: AppHandle) -> CmdResult<Option<OpenLocalOutcome>> {
+    use tauri_plugin_dialog::DialogExt;
+    let picked = {
+        let app = app.clone();
+        super::blocking(move || Ok(app.dialog().file().blocking_pick_folder())).await?
+    };
+    let Some(picked) = picked else { return Ok(None) };
+    let dir = picked.into_path().map_err(|e| format!("invalid folder: {e}"))?;
+    job(app, move |state| {
+        if !GitRepo::is_repo(&dir) {
+            return Err(format!("{} is not a Git repository — choose the folder that contains .git", dir.display()));
+        }
+        let repo = GitRepo::open(&dir).map_err(err)?;
+        let remote_url = repo.remote_url().unwrap_or_default();
+        let branch = repo.current_branch();
+        let dir_str = dir.display().to_string();
+        state.with_db(|db| {
+            let mut meta = db.load_git_meta().unwrap_or_default();
+            meta.dir = dir_str.clone();
+            meta.repo_url = remote_url.clone();
+            meta.branch = branch.clone();
+            Database::put_git_meta(db.connection(), &meta).map_err(|e| e.to_string())
+        })?;
+        let import = read_into_db(state, &dir, false)?;
+        touch_last_sync(state);
+        Ok(OpenLocalOutcome { dir: dir_str, remote_url, branch, import })
+    })
+    .await
+    .map(Some)
 }

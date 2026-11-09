@@ -231,7 +231,6 @@ export function newGitMeta(partial: Partial<GitMeta> = {}): GitMeta {
     branch: 'main',
     username: '',
     token: '',
-    // filled from the system `git config` (user.name / user.email) when available
     authorName: '',
     authorEmail: '',
     lastSyncAt: 0,

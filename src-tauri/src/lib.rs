@@ -128,7 +128,7 @@ pub fn run() {
             commands::git::git_sync,
             commands::git::git_fetch,
             commands::git::git_backup_files,
-            commands::git::git_system_identity,
+            commands::git::git_open_local,
             commands::update::update_check,
             commands::update::update_install,
             commands::files::open_text_files,

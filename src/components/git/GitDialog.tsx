@@ -3,6 +3,7 @@ import {
   ArrowDownToLine,
   ArrowUpFromLine,
   FolderGit2,
+  FolderOpen,
   GitBranch,
   GitCommitHorizontal,
   RefreshCw,
@@ -53,6 +54,7 @@ export function GitDialog() {
   const { meta, status, branches, busy, hasRepo } = useGit();
   const git = useGit.getState();
   const [commitMessage, setCommitMessage] = React.useState('');
+  const [setupTab, setSetupTab] = React.useState<'clone' | 'open'>('clone');
 
   React.useEffect(() => {
     if (open) {
@@ -80,7 +82,49 @@ export function GitDialog() {
 
         {m && (
           <div className="flex min-h-0 flex-col gap-4 overflow-y-auto py-1 pr-1">
+            {!hasRepo && (
+              <div className="flex gap-1 border-b">
+                {(
+                  [
+                    ['clone', 'Clone repository'],
+                    ['open', 'Open existing repository'],
+                  ] as const
+                ).map(([key, label]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setSetupTab(key)}
+                    className={
+                      '-mb-px border-b-2 px-3 py-1.5 text-xs font-medium transition-colors ' +
+                      (setupTab === key
+                        ? 'border-primary text-foreground'
+                        : 'border-transparent text-muted-foreground hover:text-foreground')
+                    }
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {!hasRepo && setupTab === 'open' ? (
+              <div className="flex flex-col gap-3">
+                <p className="text-xs leading-relaxed text-muted-foreground">
+                  Choose a Git repository folder that is already on this computer. Its collections
+                  and environments are imported, and commits, pulls and pushes run directly in that
+                  folder.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <Button disabled={!!busy} onClick={() => void git.openLocal()}>
+                    <FolderOpen /> Choose repository folder…
+                  </Button>
+                  {busy && <span className="self-center text-xs text-muted-foreground">{busy}…</span>}
+                </div>
+              </div>
+            ) : (
+              <>
             <div className="flex flex-col gap-2">
+              {hasRepo && m.dir && <Field label="Local folder" value={m.dir} disabled />}
               <Field
                 label="Repository URL"
                 value={m.repoUrl}
@@ -108,8 +152,8 @@ export function GitDialog() {
                   placeholder="main"
                 />
               )}
-              <Field label="Author name" value={m.authorName} onChange={(authorName) => git.updateMeta({ authorName })} placeholder="from git config user.name" />
-              <Field label="Author email" value={m.authorEmail} onChange={(authorEmail) => git.updateMeta({ authorEmail })} placeholder="from git config user.email" />
+              <Field label="Author name" value={m.authorName} onChange={(authorName) => git.updateMeta({ authorName })} placeholder="optional" />
+              <Field label="Author email" value={m.authorEmail} onChange={(authorEmail) => git.updateMeta({ authorEmail })} placeholder="optional" />
             </div>
 
             <div className="flex flex-wrap gap-2">
@@ -137,6 +181,8 @@ export function GitDialog() {
               )}
               {busy && <span className="self-center text-xs text-muted-foreground">{busy}…</span>}
             </div>
+              </>
+            )}
 
             {hasRepo && (
               <>
@@ -231,7 +277,8 @@ export function GitDialog() {
             )}
 
             <p className="text-[11px] leading-relaxed text-muted-foreground">
-              Git runs natively (libgit2) against a working tree in Zorvilo&apos;s data folder. Secret
+              Git runs natively (libgit2) against a working tree in Zorvilo&apos;s data folder, or in
+              the repository folder you opened. Secret
               variable values never leave this machine, and the token is kept in the OS keychain.
               Conflicting pulls are detected and reported — your local commit is kept until you
               resolve it or use &quot;Pull latest&quot; to take the remote version.

@@ -46,23 +46,21 @@ const LEGACY_DEFAULTS = {
   authorEmail: ['api-client@localhost', 'zorvilo@localhost'],
 };
 
-/** Drop pre-filled defaults and fill the author from the system `git config`. */
-async function withSystemIdentity(meta: GitMeta): Promise<GitMeta> {
+/** Drop values that older builds pre-filled. */
+function withoutLegacyDefaults(meta: GitMeta): GitMeta {
   const next = { ...meta };
   if (next.repoUrl === LEGACY_DEFAULTS.repoUrl && !next.token) next.repoUrl = '';
   if (next.username === LEGACY_DEFAULTS.username && !next.token) next.username = '';
   if (LEGACY_DEFAULTS.authorName.includes(next.authorName)) next.authorName = '';
   if (LEGACY_DEFAULTS.authorEmail.includes(next.authorEmail)) next.authorEmail = '';
-  if (!next.authorName || !next.authorEmail) {
-    try {
-      const id = await invoke<{ name: string | null; email: string | null }>('git_system_identity');
-      if (!next.authorName && id.name) next.authorName = id.name;
-      if (!next.authorEmail && id.email) next.authorEmail = id.email;
-    } catch {
-      // no system git config — leave the fields empty
-    }
-  }
   return next;
+}
+
+interface OpenLocalOutcome {
+  dir: string;
+  remoteUrl: string;
+  branch: string;
+  import: ImportOutcome;
 }
 
 /** Reload stores after the backend merged repository data into the database. */
@@ -87,6 +85,8 @@ interface GitStore {
   ensureMeta: () => GitMeta;
   refreshStatus: () => Promise<void>;
   clone: () => Promise<void>;
+  /** pick a repository folder already on this machine and use it */
+  openLocal: () => Promise<void>;
   init: () => Promise<void>;
   commit: (message: string) => Promise<void>;
   pullNow: () => Promise<void>;
@@ -147,9 +147,8 @@ export const useGit = create<GitStore>((set, get) => {
     hydrate: (meta) => {
       set({ meta, status: null, branches: [], hasRepo: false, behind: 0 });
       if (meta) {
-        void withSystemIdentity(meta).then((next) => {
-          if (JSON.stringify(next) !== JSON.stringify(get().meta)) get().updateMeta(next);
-        });
+        const next = withoutLegacyDefaults(meta);
+        if (JSON.stringify(next) !== JSON.stringify(meta)) get().updateMeta(next);
       }
       invoke<GitInfo>('git_info', { refreshTree: true })
         .then((info) => {
@@ -184,11 +183,6 @@ export const useGit = create<GitStore>((set, get) => {
       const meta = newGitMeta();
       set({ meta });
       queuePut('gitMeta', meta);
-      void withSystemIdentity(meta).then((next) => {
-        if (next.authorName !== meta.authorName || next.authorEmail !== meta.authorEmail) {
-          get().updateMeta({ authorName: next.authorName, authorEmail: next.authorEmail });
-        }
-      });
       return meta;
     },
 
@@ -207,6 +201,8 @@ export const useGit = create<GitStore>((set, get) => {
         toast('error', 'Enter a repository URL first');
         return;
       }
+      // clones always go into the app-managed working tree
+      if (meta.dir) get().updateMeta({ dir: '' });
       await guard('clone', async () => {
         const result = await invoke<ImportOutcome>('git_clone');
         await reloadAfterImport();
@@ -219,6 +215,27 @@ export const useGit = create<GitStore>((set, get) => {
         touchSync();
         await get().refreshStatus();
         toast('success', 'Repository cloned', `${result.imported} item(s) imported.`);
+        if (useUi.getState().openDialog === 'git') useUi.getState().setDialog(null);
+      });
+    },
+
+    openLocal: async () => {
+      get().ensureMeta();
+      await guard('open', async () => {
+        const result = await invoke<OpenLocalOutcome | null>('git_open_local');
+        if (!result) return;
+        const meta = get().meta;
+        if (meta) {
+          set({ meta: { ...meta, dir: result.dir, repoUrl: result.remoteUrl, branch: result.branch, lastSyncAt: now() } });
+        }
+        await reloadAfterImport();
+        const { useWorkspaces } = await import('./workspaces');
+        const target = result.import.workspaceIds.find((id) =>
+          useWorkspaces.getState().workspaces.some((w) => w.id === id),
+        );
+        if (target) await useWorkspaces.getState().switchTo(target);
+        await get().refreshStatus();
+        toast('success', 'Repository opened', `${result.import.imported} item(s) imported from ${result.dir}.`);
         if (useUi.getState().openDialog === 'git') useUi.getState().setDialog(null);
       });
     },
