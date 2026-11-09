@@ -2,12 +2,11 @@ import * as React from 'react';
 import { Download, ExternalLink, RefreshCw } from 'lucide-react';
 import { invoke } from '@/platform/tauri';
 import { openExternal } from '@/platform/system';
-import { useSettings } from '@/store/settings';
 import { toast } from '@/store/ui';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Pane, Row } from './shared';
-import { RELEASES_URL, useAppInfo } from './appMeta';
+import { RELEASES_URL, UPDATE_REPO, useAppInfo } from './appMeta';
 
 interface UpdateInfo {
   current: string;
@@ -21,8 +20,7 @@ interface UpdateInfo {
 
 /** Check GitHub Releases for a newer version and install it. */
 export function UpdatesPane() {
-  const repo = useSettings((s) => s.settings.updateRepo ?? '');
-  const update = useSettings((s) => s.update);
+  const repo = UPDATE_REPO;
   const { info: app } = useAppInfo();
   const [checking, setChecking] = React.useState(false);
   const [installing, setInstalling] = React.useState(false);
@@ -74,9 +72,10 @@ export function UpdatesPane() {
       >
         <Input
           value={repo}
-          onChange={(e) => update({ updateRepo: e.target.value.trim() })}
-          placeholder="owner/repo"
-          className="flex-1 font-mono text-xs"
+          readOnly
+          aria-readonly="true"
+          tabIndex={-1}
+          className="flex-1 cursor-default font-mono text-xs text-muted-foreground focus-visible:ring-0"
         />
       </Row>
       <Row label="Check for updates" hint="Download and install the latest version">
@@ -84,7 +83,7 @@ export function UpdatesPane() {
           <Button
             variant="outline"
             size="sm"
-            disabled={checking || installing || !repo}
+            disabled={checking || installing}
             onClick={() => void check()}
           >
             <RefreshCw className={checking ? 'animate-spin' : undefined} />

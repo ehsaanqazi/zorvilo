@@ -1,7 +1,9 @@
 import * as React from 'react';
 import { appInfo, type AppInfo } from '@/platform/system';
 
-export const REPO_URL = 'https://github.com/ehsaanqazi/zorvilo';
+/** GitHub repository (owner/repo) that publishes Zorvilo releases. */
+export const UPDATE_REPO = 'ehsaanqazi/zorvilo';
+export const REPO_URL = `https://github.com/${UPDATE_REPO}`;
 export const RELEASES_URL = `${REPO_URL}/releases`;
 export const NEW_ISSUE_URL = `${REPO_URL}/issues/new`;
 
