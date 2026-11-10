@@ -21,6 +21,7 @@ import {
   skipVersion,
   type UpdateInfo,
 } from './updates';
+import { UpdateProgressBar, useUpdateProgress } from './UpdateProgress';
 
 const STARTUP_CHECK_DELAY_MS = 3000;
 
@@ -28,6 +29,8 @@ const STARTUP_CHECK_DELAY_MS = 3000;
 export function UpdateDialog() {
   const [info, setInfo] = React.useState<UpdateInfo | null>(null);
   const [installing, setInstalling] = React.useState(false);
+  const [restarting, setRestarting] = React.useState(false);
+  const progress = useUpdateProgress(installing);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -71,12 +74,17 @@ export function UpdateDialog() {
     try {
       const outcome = await installUpdate(info.asset);
       clearUpdatePrompts();
+      if (outcome.restarting) {
+        // Keep the progress visible until the app quits and relaunches.
+        setRestarting(true);
+        return;
+      }
       const [title, detail] = installedMessage(info.latest, outcome);
       toast('success', title, detail);
+      setInstalling(false);
       close();
     } catch (err) {
       toast('error', 'Update failed', err instanceof Error ? err.message : String(err));
-    } finally {
       setInstalling(false);
     }
   };
@@ -87,32 +95,43 @@ export function UpdateDialog() {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="size-4 text-primary" />
-            A new version of Zorvilo is available
+            {installing ? `Updating to Zorvilo ${info.latest}` : 'A new version of Zorvilo is available'}
           </DialogTitle>
           <DialogDescription className="pt-1 leading-relaxed">
-            Update to Zorvilo {info.latest} to get the latest features and fixes. You have{' '}
-            {info.current}.
+            {installing
+              ? 'Downloading the update. Zorvilo will restart automatically when it is ready.'
+              : `Update to Zorvilo ${info.latest} to get the latest features and fixes. You have ${info.current}.`}
           </DialogDescription>
         </DialogHeader>
-        <button
-          type="button"
-          className="flex w-fit items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
-          onClick={() => void openExternal(info.releaseUrl)}
-        >
-          <ExternalLink className="size-3" /> View release page
-        </button>
-        <DialogFooter className="flex-wrap">
-          <Button variant="ghost" size="sm" disabled={installing} onClick={onSkip}>
-            Skip this version
-          </Button>
-          <Button variant="outline" size="sm" disabled={installing} onClick={onRemindLater}>
-            Remind me later
-          </Button>
-          <Button size="sm" autoFocus disabled={installing} onClick={() => void onUpdate()}>
-            <Download />
-            {installing ? 'Updating…' : 'Update now'}
-          </Button>
-        </DialogFooter>
+        {installing ? (
+          <UpdateProgressBar
+            progress={progress}
+            fallbackTotal={info.asset?.size}
+            restarting={restarting}
+          />
+        ) : (
+          <button
+            type="button"
+            className="flex w-fit items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+            onClick={() => void openExternal(info.releaseUrl)}
+          >
+            <ExternalLink className="size-3" /> View release page
+          </button>
+        )}
+        {!installing && (
+          <DialogFooter className="flex-wrap">
+            <Button variant="ghost" size="sm" onClick={onSkip}>
+              Skip this version
+            </Button>
+            <Button variant="outline" size="sm" onClick={onRemindLater}>
+              Remind me later
+            </Button>
+            <Button size="sm" autoFocus onClick={() => void onUpdate()}>
+              <Download />
+              Update now
+            </Button>
+          </DialogFooter>
+        )}
       </DialogContent>
     </Dialog>
   );

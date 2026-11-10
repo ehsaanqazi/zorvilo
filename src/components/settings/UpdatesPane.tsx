@@ -13,6 +13,7 @@ import {
   installedMessage,
   type UpdateInfo,
 } from './updates';
+import { UpdateProgressBar, useUpdateProgress } from './UpdateProgress';
 
 /** Check GitHub Releases for a newer version and install it. */
 export function UpdatesPane() {
@@ -20,6 +21,8 @@ export function UpdatesPane() {
   const { info: app } = useAppInfo();
   const [checking, setChecking] = React.useState(false);
   const [installing, setInstalling] = React.useState(false);
+  const [restarting, setRestarting] = React.useState(false);
+  const progress = useUpdateProgress(installing);
   const [info, setInfo] = React.useState<UpdateInfo | null>(null);
 
   const check = async () => {
@@ -43,11 +46,16 @@ export function UpdatesPane() {
     try {
       const outcome = await installUpdate(info.asset);
       clearUpdatePrompts();
+      if (outcome.restarting) {
+        // Keep the progress visible until the app quits and relaunches.
+        setRestarting(true);
+        return;
+      }
       const [title, detail] = installedMessage(info.latest, outcome);
       toast('success', title, detail);
+      setInstalling(false);
     } catch (err) {
       toast('error', 'Update failed', err instanceof Error ? err.message : String(err));
-    } finally {
       setInstalling(false);
     }
   };
@@ -94,6 +102,13 @@ export function UpdatesPane() {
               {info.current}.
             </p>
           </div>
+          {installing && (
+            <UpdateProgressBar
+              progress={progress}
+              fallbackTotal={info.asset?.size}
+              restarting={restarting}
+            />
+          )}
           <div className="flex gap-2">
             {info.asset ? (
               <Button size="sm" disabled={installing} onClick={() => void install()}>

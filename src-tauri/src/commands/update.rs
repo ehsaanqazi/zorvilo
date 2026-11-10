@@ -320,6 +320,36 @@ fn apply_linux(installer: &std::path::Path) -> CmdResult<bool> {
     Ok(true)
 }
 
+/// Progress of the update download, sent to the UI as `update-progress` events.
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct DownloadProgress {
+    downloaded: u64,
+    /// total size in bytes, when the server reports it
+    total: Option<u64>,
+}
+
+/// Read the response body chunk by chunk, emitting progress at most ~10× a second.
+async fn download_with_progress(app: &tauri::AppHandle, mut resp: reqwest::Response) -> CmdResult<Vec<u8>> {
+    use tauri::Emitter;
+    let total = resp.content_length().filter(|t| *t > 0);
+    let mut bytes: Vec<u8> = Vec::with_capacity(total.unwrap_or(0).min(512 * 1024 * 1024) as usize);
+    let mut last = std::time::Instant::now();
+    let emit = |downloaded: u64| {
+        let _ = app.emit("update-progress", DownloadProgress { downloaded, total });
+    };
+    emit(0);
+    while let Some(chunk) = resp.chunk().await.map_err(|e| format!("download failed: {e}"))? {
+        bytes.extend_from_slice(&chunk);
+        if last.elapsed() >= std::time::Duration::from_millis(100) {
+            last = std::time::Instant::now();
+            emit(bytes.len() as u64);
+        }
+    }
+    emit(bytes.len() as u64);
+    Ok(bytes)
+}
+
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct InstallOutcome {
@@ -342,7 +372,7 @@ pub async fn update_install(app: tauri::AppHandle, url: String, name: String) ->
     if !resp.status().is_success() {
         return Err(format!("download failed: HTTP {}", resp.status()));
     }
-    let bytes = resp.bytes().await.map_err(|e| format!("download failed: {e}"))?;
+    let bytes = download_with_progress(&app, resp).await?;
 
     let outcome = super::blocking(move || {
         let stage = staging_dir()?;
