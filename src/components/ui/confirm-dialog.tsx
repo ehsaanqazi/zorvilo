@@ -101,16 +101,19 @@ export function TextPromptDialog() {
 
   if (!prompt) return null;
 
+  const blocked = prompt.required === true && !value.trim();
+
   return (
     <Dialog open onOpenChange={(open) => !open && resolveText(null)}>
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>{prompt.title}</DialogTitle>
+          {prompt.description && <DialogDescription>{prompt.description}</DialogDescription>}
         </DialogHeader>
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            resolveText(value);
+            if (!blocked) resolveText(value);
           }}
           className="flex flex-col gap-4"
         >
@@ -119,13 +122,15 @@ export function TextPromptDialog() {
             value={value}
             placeholder={prompt.placeholder}
             onChange={(e) => setValue(e.target.value)}
-            className="font-mono text-xs"
+            className={prompt.monospace === false ? 'text-sm' : 'font-mono text-xs'}
           />
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => resolveText(null)}>
               Cancel
             </Button>
-            <Button type="submit">Save</Button>
+            <Button type="submit" disabled={blocked}>
+              {prompt.confirmLabel ?? 'Save'}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

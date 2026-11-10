@@ -49,6 +49,14 @@ export interface TextPromptState {
   title: string;
   placeholder?: string;
   initialValue?: string;
+  /** optional helper text under the title */
+  description?: string;
+  /** submit button label (default "Save") */
+  confirmLabel?: string;
+  /** render the input in a monospace font (default true) */
+  monospace?: boolean;
+  /** disable submit while the trimmed value is empty */
+  required?: boolean;
   /** receives the entered text, or null when cancelled */
   onSubmit: (value: string | null) => void;
 }
@@ -189,9 +197,10 @@ export function askText(
   title: string,
   placeholder?: string,
   initialValue?: string,
+  options: Pick<TextPromptState, 'description' | 'confirmLabel' | 'monospace' | 'required'> = {},
 ): Promise<string | null> {
   return new Promise((resolve) => {
-    useUi.getState().requestText({ title, placeholder, initialValue, onSubmit: resolve });
+    useUi.getState().requestText({ title, placeholder, initialValue, ...options, onSubmit: resolve });
   });
 }
 

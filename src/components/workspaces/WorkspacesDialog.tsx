@@ -8,13 +8,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
+import { promptCreateWorkspace } from './createWorkspace';
 
 export function WorkspacesDialog() {
   const open = useUi((s) => s.openDialog === 'workspaces');
   const setDialog = useUi((s) => s.setDialog);
   const activeId = useUi((s) => s.ui.activeWorkspaceId);
   const workspaces = useWorkspaces((s) => s.workspaces);
-  const { create, rename, remove, duplicate, switchTo } = useWorkspaces();
+  const { rename, remove, duplicate, switchTo } = useWorkspaces();
   const [renamingId, setRenamingId] = React.useState<string | null>(null);
   const [renameValue, setRenameValue] = React.useState('');
 
@@ -114,7 +115,7 @@ export function WorkspacesDialog() {
         </div>
         <Button
           variant="outline"
-          onClick={() => void create('New Workspace').then((ws) => switchTo(ws.id))}
+          onClick={() => void promptCreateWorkspace()}
         >
           <Plus /> New workspace
         </Button>

@@ -4,6 +4,7 @@ import { LayoutGrid, Lock } from 'lucide-react';
 import { useWorkspaces } from '@/store/workspaces';
 import { useUi } from '@/store/ui';
 import { cn } from '@/lib/utils';
+import { promptCreateWorkspace } from './createWorkspace';
 
 interface WorkspacePickerProps {
   /** Renders the trigger; receives open state so it can style itself. */
@@ -16,7 +17,6 @@ const POPOVER_WIDTH = 288;
 /** Postman-style workspace switcher popover: search, create, list, view all. */
 export function WorkspacePicker({ children, align = 'start' }: WorkspacePickerProps) {
   const workspaces = useWorkspaces((s) => s.workspaces);
-  const create = useWorkspaces((s) => s.create);
   const switchTo = useWorkspaces((s) => s.switchTo);
   const activeId = useUi((s) => s.ui.activeWorkspaceId);
   const setDialog = useUi((s) => s.setDialog);
@@ -85,9 +85,9 @@ export function WorkspacePicker({ children, align = 'start' }: WorkspacePickerPr
   };
 
   const onCreate = () => {
-    const name = query.trim() || 'New Workspace';
+    const name = query.trim();
     close();
-    void create(name).then((ws) => switchTo(ws.id));
+    void promptCreateWorkspace(name);
   };
 
   const onViewAll = () => {
