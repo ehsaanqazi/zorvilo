@@ -1,4 +1,5 @@
-import { ChevronDown, GitBranch, Plus, Search, Settings, Upload } from 'lucide-react';
+import { ChevronDown, GitBranch, Lock, Search, Settings, Upload } from 'lucide-react';
+import { WorkspacePicker } from '@/components/workspaces/WorkspacePicker';
 import { useUi } from '@/store/ui';
 import { useGit } from '@/store/git';
 import { useWorkspaces } from '@/store/workspaces';
@@ -18,44 +19,30 @@ import {
 
 const isMac = typeof navigator !== 'undefined' && /mac/i.test(navigator.platform);
 
-/** Workspaces dropdown in the header (switch / create / manage). */
+/** Workspace switcher in the header — shows the active workspace like Postman. */
 function WorkspacesMenu() {
-  const workspaces = useWorkspaces((s) => s.workspaces);
-  const create = useWorkspaces((s) => s.create);
-  const switchTo = useWorkspaces((s) => s.switchTo);
   const activeId = useUi((s) => s.ui.activeWorkspaceId);
-  const setDialog = useUi((s) => s.setDialog);
+  const workspaceName = useWorkspaces((s) => s.workspaces.find((w) => w.id === activeId)?.name);
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
+    <WorkspacePicker>
+      {(open) => (
         <button
           type="button"
-          className="flex h-7 items-center gap-1 rounded px-2 text-[13px] font-medium text-foreground hover:bg-accent"
+          title="Switch workspace"
+          className={cn(
+            'flex h-7 min-w-0 max-w-[260px] items-center gap-1.5 rounded-md px-2 text-[13px] font-medium text-foreground hover:bg-accent',
+            open && 'bg-accent',
+          )}
         >
-          Workspaces <ChevronDown className="size-3.5 text-muted-foreground" />
+          <Lock className="size-3.5 shrink-0 text-muted-foreground" />
+          <span className="truncate">{workspaceName ?? 'Workspace'}</span>
+          <ChevronDown
+            className={cn('size-3.5 shrink-0 text-muted-foreground transition-transform', open && 'rotate-180')}
+          />
         </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-64" align="start">
-        <DropdownMenuLabel>Your workspaces</DropdownMenuLabel>
-        {workspaces.map((w) => (
-          <DropdownMenuItem key={w.id} onSelect={() => void switchTo(w.id)}>
-            <span
-              className={cn(
-                'size-1.5 shrink-0 rounded-full',
-                w.id === activeId ? 'bg-primary' : 'bg-transparent',
-              )}
-            />
-            <span className={cn('truncate', w.id === activeId && 'font-medium')}>{w.name}</span>
-          </DropdownMenuItem>
-        ))}
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onSelect={() => void create('New Workspace').then((ws) => switchTo(ws.id))}>
-          <Plus /> Create workspace
-        </DropdownMenuItem>
-        <DropdownMenuItem onSelect={() => setDialog('workspaces')}>View all workspaces…</DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+      )}
+    </WorkspacePicker>
   );
 }
 
@@ -103,8 +90,6 @@ export function NewMenu({ trigger }: { trigger: React.ReactNode }) {
 export function TopBar() {
   const setDialog = useUi((s) => s.setDialog);
   const setPaletteOpen = useUi((s) => s.setPaletteOpen);
-  const activeId = useUi((s) => s.ui.activeWorkspaceId);
-  const workspaceName = useWorkspaces((s) => s.workspaces.find((w) => w.id === activeId)?.name);
   const gitBusy = useGit((s) => s.busy);
   const gitChanges = useGit((s) => s.status?.changedFiles.length ?? 0);
 
@@ -113,9 +98,6 @@ export function TopBar() {
       <div className="flex min-w-0 flex-1 items-center gap-1">
         <img src="/icon-192.png" alt="Zorvilo" title="Zorvilo" className="mr-2 size-6 rounded-md" />
         <WorkspacesMenu />
-        <span className="hidden truncate text-xs text-muted-foreground lg:inline">
-          · {workspaceName ?? 'Workspace'}
-        </span>
       </div>
 
       <button
