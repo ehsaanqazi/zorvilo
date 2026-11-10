@@ -2,6 +2,7 @@
   "name": "zorvilo",
   "private": true,
   "version": "0.1.0",
+  "license": "MIT",
   "description": "Zorvilo — local-first, Git-backed desktop API client (React + Tauri + Rust)",
   "type": "module",
   "scripts": {
