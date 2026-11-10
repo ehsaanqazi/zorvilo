@@ -88,16 +88,12 @@ export function UpdatesPane() {
       {info?.updateAvailable && (
         <div className="flex flex-col gap-2 rounded-md border p-3 text-xs">
           <div>
-            <span className="font-medium">{info.releaseName}</span>{' '}
-            <span className="text-muted-foreground">
-              (installed {info.current} → latest {info.latest})
-            </span>
+            <span className="font-medium">Update available — Zorvilo {info.latest}</span>
+            <p className="mt-1 text-muted-foreground">
+              Update to the latest version for the newest features and fixes. You have{' '}
+              {info.current}.
+            </p>
           </div>
-          {info.notes && (
-            <pre className="max-h-40 overflow-y-auto whitespace-pre-wrap font-sans text-muted-foreground">
-              {info.notes}
-            </pre>
-          )}
           <div className="flex gap-2">
             {info.asset ? (
               <Button size="sm" disabled={installing} onClick={() => void install()}>

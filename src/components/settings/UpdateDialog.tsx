@@ -90,14 +90,10 @@ export function UpdateDialog() {
             A new version of Zorvilo is available
           </DialogTitle>
           <DialogDescription className="pt-1 leading-relaxed">
-            {info.releaseName || `Zorvilo ${info.latest}`} is ready. You have {info.current}.
+            Update to Zorvilo {info.latest} to get the latest features and fixes. You have{' '}
+            {info.current}.
           </DialogDescription>
         </DialogHeader>
-        {info.notes && (
-          <pre className="max-h-48 overflow-y-auto whitespace-pre-wrap rounded-md border p-3 font-sans text-xs text-muted-foreground">
-            {info.notes}
-          </pre>
-        )}
         <button
           type="button"
           className="flex w-fit items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
