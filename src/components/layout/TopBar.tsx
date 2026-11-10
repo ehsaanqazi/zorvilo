@@ -31,7 +31,7 @@ function WorkspacesMenu() {
           type="button"
           title="Switch workspace"
           className={cn(
-            'flex h-7 min-w-0 max-w-[260px] items-center gap-1.5 rounded-md px-2 text-[13px] font-medium text-foreground hover:bg-accent',
+            'flex h-8 min-w-0 max-w-[260px] items-center gap-1.5 rounded px-2 text-xs font-medium text-foreground hover:bg-accent',
             open && 'bg-accent',
           )}
         >
@@ -54,16 +54,16 @@ export function NewMenu({ trigger }: { trigger: React.ReactNode }) {
       <DropdownMenuContent align="start" className="w-52">
         <DropdownMenuLabel>Create new</DropdownMenuLabel>
         <DropdownMenuItem onSelect={() => useTabs.getState().openDraft(protocolPreset('http'))}>
-          <span className="w-9 font-mono text-[10px] font-bold text-emerald-600">HTTP</span> HTTP request
+          <span className="w-9 text-[10px] font-bold text-[#007f31] dark:text-[#6bdd9a]">HTTP</span> HTTP request
         </DropdownMenuItem>
         <DropdownMenuItem onSelect={() => useTabs.getState().openDraft(protocolPreset('graphql'))}>
-          <span className="w-9 font-mono text-[10px] font-bold text-pink-600">GQL</span> GraphQL
+          <span className="w-9 text-[10px] font-bold text-pink-600">GQL</span> GraphQL
         </DropdownMenuItem>
         <DropdownMenuItem onSelect={() => useTabs.getState().openDraft(protocolPreset('ws'))}>
-          <span className="w-9 font-mono text-[10px] font-bold text-cyan-600">WS</span> WebSocket
+          <span className="w-9 text-[10px] font-bold text-cyan-600">WS</span> WebSocket
         </DropdownMenuItem>
         <DropdownMenuItem onSelect={() => useTabs.getState().openDraft(protocolPreset('socketio'))}>
-          <span className="w-9 font-mono text-[10px] font-bold text-indigo-600">SIO</span> Socket.IO
+          <span className="w-9 text-[10px] font-bold text-indigo-600">SIO</span> Socket.IO
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem
@@ -76,10 +76,10 @@ export function NewMenu({ trigger }: { trigger: React.ReactNode }) {
             });
           }}
         >
-          <span className="w-9 font-mono text-[10px] font-bold text-muted-foreground">COL</span> Collection
+          <span className="w-9 text-[10px] font-bold text-muted-foreground">COL</span> Collection
         </DropdownMenuItem>
         <DropdownMenuItem onSelect={() => useUi.getState().openEnvironment('globals')}>
-          <span className="w-9 font-mono text-[10px] font-bold text-muted-foreground">ENV</span> Environment
+          <span className="w-9 text-[10px] font-bold text-muted-foreground">ENV</span> Environment
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -94,7 +94,7 @@ export function TopBar() {
   const gitChanges = useGit((s) => s.status?.changedFiles.length ?? 0);
 
   return (
-    <header className="flex h-11 shrink-0 select-none items-center gap-2 border-b bg-card px-3">
+    <header className="flex h-12 shrink-0 select-none items-center gap-2 border-b bg-card px-3">
       <div className="flex min-w-0 flex-1 items-center gap-1">
         <img src="/icon-192.png" alt="Zorvilo" title="Zorvilo" className="mr-2 size-6 rounded-md" />
         <WorkspacesMenu />
@@ -103,11 +103,11 @@ export function TopBar() {
       <button
         type="button"
         onClick={() => setPaletteOpen(true)}
-        className="flex h-8 w-full max-w-md items-center gap-2 rounded-md border bg-muted px-3 text-[13px] text-muted-foreground transition-colors hover:border-input hover:bg-accent"
+        className="flex h-8 w-full max-w-[340px] items-center gap-2 rounded border border-transparent bg-secondary px-2.5 text-xs text-muted-foreground transition-colors hover:border-input"
       >
-        <Search className="size-4" />
+        <Search className="size-3.5" />
         <span className="flex-1 text-left">Search Zorvilo</span>
-        <kbd className="rounded border bg-background px-1.5 font-sans text-[10px]">
+        <kbd className="rounded-sm bg-background px-1.5 py-px font-sans text-[10px] leading-4 shadow-[0_0_0_1px_var(--border)]">
           {isMac ? '⌘K' : 'Ctrl K'}
         </kbd>
       </button>

@@ -21,7 +21,7 @@ export function Toaster() {
           {t.kind === 'error' && <AlertCircle className="mt-0.5 size-4 shrink-0 text-destructive" />}
           {t.kind === 'info' && <Info className="mt-0.5 size-4 shrink-0 text-muted-foreground" />}
           <div className="min-w-0 flex-1">
-            <div className="text-[13px] font-medium">{t.title}</div>
+            <div className="text-xs font-medium">{t.title}</div>
             {t.detail && (
               <div className="mt-0.5 break-words text-xs text-muted-foreground">{t.detail}</div>
             )}

@@ -64,11 +64,13 @@ export function AuthEditor({
   const set = (patch: Partial<AuthConfig>) => onChange({ ...auth, ...patch });
 
   return (
-    <div className="flex flex-col gap-3 p-3">
-      <label className="flex items-center gap-3">
-        <span className="w-28 shrink-0 text-xs text-muted-foreground">Type</span>
+    <div className="@container h-full">
+    <div className="flex min-h-full flex-col @2xl:flex-row">
+      {/* left column: auth type, like Postman's Authorization tab */}
+      <div className="flex shrink-0 flex-col gap-2 border-b p-4 @2xl:w-72 @2xl:border-b-0 @2xl:border-r">
+        <span className="text-xs font-semibold text-muted-foreground">Auth Type</span>
         <Select value={auth.type} onValueChange={(type) => set({ type: type as AuthType })}>
-          <SelectTrigger className="w-52">
+          <SelectTrigger className="w-full max-w-60">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -81,7 +83,12 @@ export function AuthEditor({
               ))}
           </SelectContent>
         </Select>
-      </label>
+        <p className="text-[11px] leading-relaxed text-muted-foreground">
+          The authorization header will be automatically generated when you send the request.
+        </p>
+      </div>
+
+      <div className="flex min-w-0 flex-1 flex-col gap-3 p-4">
 
       {auth.type === 'inherit' && (
         <p className="text-xs text-muted-foreground">
@@ -169,8 +176,12 @@ export function AuthEditor({
       )}
 
       {auth.type === 'none' && (
-        <p className="text-xs text-muted-foreground">This request does not use authentication.</p>
+        <p className="text-xs text-muted-foreground">
+          This request does not use any authorization.
+        </p>
       )}
+      </div>
+    </div>
     </div>
   );
 }

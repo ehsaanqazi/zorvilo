@@ -67,10 +67,10 @@ function TabItem({ tab }: { tab: TabState }) {
           }}
           onClick={() => activate(tab.id)}
           className={cn(
-            'group flex h-10 min-w-0 w-44 max-w-52 shrink-0 cursor-default select-none items-center gap-1.5 border-r px-3 text-[13px]',
+            'group relative flex h-10 min-w-0 w-44 max-w-52 shrink-0 cursor-default select-none items-center gap-1.5 border-r pl-3 pr-1.5 text-xs',
             isActive
               ? 'bg-background text-foreground shadow-[inset_0_2px_0_var(--primary)]'
-              : 'bg-card text-muted-foreground hover:bg-accent/60 hover:text-foreground',
+              : 'bg-card text-muted-foreground hover:bg-accent hover:text-foreground',
             dragOver && 'bg-primary/10',
           )}
         >
@@ -78,22 +78,34 @@ function TabItem({ tab }: { tab: TabState }) {
           {isCollection ? (
             <Folder className="size-3.5 shrink-0 text-primary" />
           ) : (
-            <span className={cn('shrink-0 font-mono text-[10px] font-semibold', badge.className)}>
+            <span className={cn('shrink-0 text-[10px] font-bold', badge.className)}>
               {badge.label}
             </span>
           )}
           <span className="min-w-0 flex-1 truncate">{title}</span>
-          {isDirty && <span className="size-1.5 shrink-0 rounded-full bg-primary" title="Unsaved" />}
-          <button
-            type="button"
-            className="shrink-0 rounded p-0.5 opacity-0 hover:bg-accent group-hover:opacity-100"
-            onClick={(e) => {
-              e.stopPropagation();
-              requestClose(tab.id);
-            }}
-          >
-            <X className="size-3" />
-          </button>
+          {/* Postman: the unsaved dot sits where the close button is and swaps on hover */}
+          <span className="relative flex size-5 shrink-0 items-center justify-center">
+            {isDirty && (
+              <span
+                className="size-2 rounded-full bg-primary group-hover:hidden"
+                title="Unsaved"
+              />
+            )}
+            <button
+              type="button"
+              title="Close tab"
+              className={cn(
+                'size-5 items-center justify-center rounded text-muted-foreground hover:bg-highlight hover:text-foreground',
+                isDirty ? 'hidden group-hover:flex' : isActive ? 'flex' : 'hidden group-hover:flex',
+              )}
+              onClick={(e) => {
+                e.stopPropagation();
+                requestClose(tab.id);
+              }}
+            >
+              <X className="size-3.5" />
+            </button>
+          </span>
         </div>
       </ContextMenuTrigger>
       <ContextMenuContent>
@@ -149,7 +161,7 @@ export function TabBar() {
           <button
             type="button"
             title="New… (Ctrl+N for request)"
-            className="flex h-10 w-9 shrink-0 items-center justify-center text-muted-foreground hover:bg-accent/60 hover:text-foreground"
+            className="mx-1 flex size-7 shrink-0 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground"
           >
             <Plus className="size-4" />
           </button>

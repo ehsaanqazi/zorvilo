@@ -75,7 +75,7 @@ export function EnvironmentsDialog() {
               type="button"
               onClick={() => setSelectedId('globals')}
               className={cn(
-                'rounded px-2 py-1.5 text-left text-[13px] hover:bg-accent',
+                'rounded px-2 py-1.5 text-left text-xs hover:bg-accent',
                 selectedId === 'globals' && 'bg-accent font-medium',
               )}
             >
@@ -89,7 +89,7 @@ export function EnvironmentsDialog() {
                   type="button"
                   onClick={() => setSelectedId(env.id)}
                   className={cn(
-                    'flex w-full items-center rounded px-2 py-1.5 text-left text-[13px] hover:bg-accent',
+                    'flex w-full items-center rounded px-2 py-1.5 text-left text-xs hover:bg-accent',
                     selectedId === env.id && 'bg-accent font-medium',
                   )}
                 >

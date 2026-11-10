@@ -1,4 +1,4 @@
-import { Check, Layers } from 'lucide-react';
+import { Check, ChevronDown } from 'lucide-react';
 import { useEnvironments } from '@/store/environments';
 import { useUi } from '@/store/ui';
 import {
@@ -22,11 +22,14 @@ export function EnvironmentSelector() {
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          className="flex h-7 max-w-44 items-center gap-1.5 rounded-md border px-2 text-xs hover:bg-accent"
+          className={cn(
+            'flex h-7 max-w-52 items-center gap-1.5 rounded px-2 text-xs hover:bg-accent data-[state=open]:bg-accent',
+            active ? 'text-foreground' : 'text-muted-foreground',
+          )}
           title="Active environment"
         >
-          <Layers className={cn('size-3.5 shrink-0', active ? 'text-primary' : 'text-muted-foreground')} />
           <span className="truncate">{active?.name ?? 'No environment'}</span>
+          <ChevronDown className="size-3.5 shrink-0 text-muted-foreground" />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">

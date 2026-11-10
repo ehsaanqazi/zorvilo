@@ -1,7 +1,7 @@
-import { Paperclip, Sparkles, Trash2, Upload, X } from 'lucide-react';
+import { Paperclip, Trash2, Upload, X } from 'lucide-react';
 import type { ApiRequest, BodyConfig, BodyType, FormDataFile, FormDataItem } from '@/types/models';
 import { BODY_TYPES, formDataFiles } from '@/types/models';
-import { fileToBase64, formatBytes } from '@/lib/utils';
+import { cn, fileToBase64, formatBytes } from '@/lib/utils';
 import { newKeyValue } from '@/lib/factories';
 import { toast } from '@/store/ui';
 import { Button } from '@/components/ui/button';
@@ -26,6 +26,19 @@ const LABELS: Record<BodyType, string> = {
   multipart: 'multipart/form-data',
   binary: 'Binary',
 };
+
+/** Body types that Postman groups under the single "raw" radio. */
+const RAW_TYPES: BodyType[] = ['text', 'json', 'xml', 'html', 'raw'];
+
+/** Postman's body mode radios, mapped onto the existing body types. */
+const BODY_MODES: { key: string; label: string; type: BodyType }[] = [
+  { key: 'none', label: 'none', type: 'none' },
+  { key: 'multipart', label: 'form-data', type: 'multipart' },
+  { key: 'form-urlencoded', label: 'x-www-form-urlencoded', type: 'form-urlencoded' },
+  { key: 'raw', label: 'raw', type: 'json' },
+  { key: 'binary', label: 'binary', type: 'binary' },
+  { key: 'graphql', label: 'GraphQL', type: 'graphql' },
+];
 
 const MONACO_LANG: Partial<Record<BodyType, string>> = {
   json: 'json',
@@ -112,31 +125,51 @@ function MultipartEditor({
   };
 
   return (
-    <div className="flex flex-col gap-1 p-2">
+    <div className="flex flex-col px-4 pb-4 pt-1">
+      <div className="flex flex-col border text-xs">
+      <div className="flex h-8 items-stretch border-b font-semibold text-muted-foreground">
+        <span className="w-8 shrink-0 border-r" />
+        <span className="flex min-w-0 flex-1 items-center border-r px-2.5">Key</span>
+        <span className="flex min-w-0 flex-[1.4] items-center px-2.5">Value</span>
+        <span className="w-8 shrink-0" />
+      </div>
       {items.map((item, i) => {
         const files = item.kind === 'file' ? formDataFiles(item) : [];
         return (
-          <div key={item.id} className="flex items-start gap-1.5 border-b border-border/40 py-1">
-            <Checkbox
-              checked={item.enabled}
-              onCheckedChange={(checked) => patch(i, { enabled: checked === true })}
-              className="ml-1 mt-1.5 shrink-0"
-            />
-            <Input
-              value={item.key}
-              placeholder="Key"
-              onChange={(e) => patch(i, { key: e.target.value })}
-              className="h-7 flex-1 font-mono text-xs"
-            />
-            {item.kind === 'text' ? (
-              <Input
-                value={item.value}
-                placeholder="Value"
-                onChange={(e) => patch(i, { value: e.target.value })}
-                className="h-7 flex-[1.4] font-mono text-xs"
+          <div
+            key={item.id}
+            className="group flex min-h-8 items-stretch border-b last:border-b-0 hover:bg-muted/60"
+          >
+            <div className="flex w-8 shrink-0 items-center justify-center border-r">
+              <Checkbox
+                checked={item.enabled}
+                onCheckedChange={(checked) => patch(i, { enabled: checked === true })}
+                className="shrink-0"
               />
+            </div>
+            <div className="flex min-w-0 flex-1 items-center border-r px-0.5">
+              <Input
+                value={item.key}
+                placeholder="Key"
+                onChange={(e) => patch(i, { key: e.target.value })}
+                className="h-7 flex-1 border-transparent px-2 font-mono text-xs focus-visible:border-input focus-visible:ring-0"
+              />
+              <span className="shrink-0 rounded-sm bg-secondary px-1 py-px text-[10px] text-muted-foreground">
+                {item.kind === 'file' ? 'File' : 'Text'}
+              </span>
+              <span className="w-1 shrink-0" />
+            </div>
+            {item.kind === 'text' ? (
+              <div className="flex min-w-0 flex-[1.4] items-center px-0.5">
+                <Input
+                  value={item.value}
+                  placeholder="Value"
+                  onChange={(e) => patch(i, { value: e.target.value })}
+                  className="h-7 flex-1 border-transparent px-2 font-mono text-xs focus-visible:border-input focus-visible:ring-0"
+                />
+              </div>
             ) : (
-              <div className="flex flex-[1.4] flex-wrap items-center gap-1">
+              <div className="flex min-w-0 flex-[1.4] flex-wrap items-center gap-1 px-2 py-1">
                 {files.map((f, fileIdx) => (
                   <span
                     key={fileIdx}
@@ -168,19 +201,25 @@ function MultipartEditor({
                 )}
               </div>
             )}
-            <Button
-              variant="ghost"
-              size="iconSm"
-              className="mt-0.5"
-              onClick={() => onChange(items.filter((_, idx) => idx !== i))}
-              aria-label="Remove row"
-            >
-              <Trash2 />
-            </Button>
+            <div className="flex w-8 shrink-0 items-center justify-center">
+              <Button
+                variant="ghost"
+                size="iconSm"
+                className="invisible group-hover:visible"
+                onClick={() => onChange(items.filter((_, idx) => idx !== i))}
+                aria-label="Remove row"
+              >
+                <Trash2 />
+              </Button>
+            </div>
           </div>
         );
       })}
-      <div className="flex gap-2 pt-1">
+      {items.length === 0 && (
+        <div className="flex h-8 items-center px-2.5 text-muted-foreground">No fields yet</div>
+      )}
+      </div>
+      <div className="flex gap-2 pt-2">
         <Button variant="outline" size="sm" onClick={addText}>
           Add text field
         </Button>
@@ -203,28 +242,58 @@ export function BodyEditor({
   const set = (patch: Partial<BodyConfig>) => onChange({ body: { ...body, ...patch } });
   const variableLookup = useVariableLookup(request);
   const variableSuggestions = useVariableSuggestions(request);
+  const isRaw = RAW_TYPES.includes(body.type);
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center gap-2 border-b px-3 py-1.5">
-        <span className="text-xs text-muted-foreground">Type</span>
-        <Select value={body.type} onValueChange={(type) => set({ type: type as BodyType })}>
-          <SelectTrigger className="h-7 w-56">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {BODY_TYPES.map((t) => (
-              <SelectItem key={t} value={t}>
-                {LABELS[t]}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+      <div className="flex min-h-9 flex-wrap items-center gap-x-4 gap-y-1 px-4 py-1.5">
+        {BODY_MODES.filter((m) => BODY_TYPES.includes(m.type)).map((m) => {
+          const selected = m.key === 'raw' ? isRaw : body.type === m.type;
+          return (
+            <button
+              key={m.key}
+              type="button"
+              role="radio"
+              aria-checked={selected}
+              onClick={() => {
+                if (!selected) set({ type: m.type });
+              }}
+              className={cn(
+                'flex items-center gap-1.5 text-xs',
+                selected ? 'text-foreground' : 'text-muted-foreground hover:text-foreground',
+              )}
+            >
+              <span
+                className={cn(
+                  'flex size-3.5 shrink-0 items-center justify-center rounded-full border',
+                  selected ? 'border-primary' : 'border-muted-foreground/60',
+                )}
+              >
+                {selected && <span className="size-2 rounded-full bg-primary" />}
+              </span>
+              {m.label}
+            </button>
+          );
+        })}
+        {isRaw && (
+          <Select value={body.type} onValueChange={(type) => set({ type: type as BodyType })}>
+            <SelectTrigger className="h-6 gap-1 border-0 px-1 font-medium text-send focus:ring-0">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {RAW_TYPES.filter((t) => BODY_TYPES.includes(t)).map((t) => (
+                <SelectItem key={t} value={t}>
+                  {LABELS[t]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
         {body.type === 'json' && (
           <Button
-            variant="outline"
+            variant="ghost"
             size="sm"
-            className="ml-auto"
+            className="ml-auto h-6 px-1.5 font-medium text-send hover:text-send"
             onClick={() => {
               try {
                 const formatted = JSON.stringify(JSON.parse(body.content), null, 2);
@@ -234,7 +303,7 @@ export function BodyEditor({
               }
             }}
           >
-            <Sparkles /> Beautify
+            Beautify
           </Button>
         )}
       </div>
@@ -242,7 +311,7 @@ export function BodyEditor({
       <div className="min-h-0 flex-1">
         {body.type === 'none' && (
           <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
-            This request has no body.
+            This request does not have a body
           </div>
         )}
 
@@ -285,7 +354,7 @@ export function BodyEditor({
         )}
 
         {body.type === 'form-urlencoded' && (
-          <div className="overflow-y-auto p-2">
+          <div className="h-full overflow-y-auto px-4 pb-4 pt-1">
             <KeyValueEditor
               request={request}
               items={body.formUrlEncoded}
@@ -296,7 +365,7 @@ export function BodyEditor({
         )}
 
         {body.type === 'multipart' && (
-          <div className="overflow-y-auto">
+          <div className="h-full overflow-y-auto">
             <MultipartEditor items={body.multipart} onChange={(multipart) => set({ multipart })} />
           </div>
         )}

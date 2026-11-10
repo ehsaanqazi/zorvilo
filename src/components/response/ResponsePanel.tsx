@@ -16,6 +16,7 @@ import {
   matches,
   slugify,
   statusColorClass,
+  statusPillClass,
   tryFormatJson,
 } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -58,7 +59,7 @@ function HeadersTable({ headers }: { headers: [string, string][] }) {
   const rows = headers.filter(([k, v]) => matches(k, filter) || matches(v, filter));
   return (
     <div className="flex h-full flex-col">
-      <div className="p-2">
+      <div className="px-4 py-2">
         <Input
           placeholder="Filter headers"
           value={filter}
@@ -66,13 +67,19 @@ function HeadersTable({ headers }: { headers: [string, string][] }) {
           className="h-7 max-w-64"
         />
       </div>
-      <div className="min-h-0 flex-1 overflow-y-auto px-2 pb-2">
-        <table className="w-full text-xs">
+      <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
+        <table className="w-full table-fixed border text-xs">
+          <thead>
+            <tr className="border-b text-left text-muted-foreground">
+              <th className="w-[35%] border-r px-2.5 py-1.5 font-semibold">Key</th>
+              <th className="px-2.5 py-1.5 font-semibold">Value</th>
+            </tr>
+          </thead>
           <tbody>
             {rows.map(([key, value], i) => (
-              <tr key={`${key}-${i}`} className="border-b border-border/40">
-                <td className="whitespace-nowrap py-1 pr-4 align-top font-mono font-medium">{key}</td>
-                <td className="break-all py-1 font-mono text-muted-foreground">{value}</td>
+              <tr key={`${key}-${i}`} className="border-b last:border-b-0 hover:bg-muted/60">
+                <td className="w-[35%] border-r px-2.5 py-1.5 align-top break-words">{key}</td>
+                <td className="break-all px-2.5 py-1.5">{value}</td>
               </tr>
             ))}
           </tbody>
@@ -157,15 +164,17 @@ function BodyView({ response, mode }: { response: ResponseData; mode: BodyMode }
 
 function ModeToggle({ mode, setMode }: { mode: BodyMode; setMode: (m: BodyMode) => void }) {
   return (
-    <div className="flex items-center rounded-md border p-0.5">
+    <div className="flex items-center gap-0.5">
       {BODY_MODES.map((m) => (
         <button
           key={m}
           type="button"
           onClick={() => setMode(m)}
           className={cn(
-            'rounded px-2 py-0.5 capitalize',
-            mode === m ? 'bg-accent font-medium' : 'text-muted-foreground hover:text-foreground',
+            'h-6 rounded px-2 capitalize',
+            mode === m
+              ? 'bg-highlight font-medium text-foreground'
+              : 'text-muted-foreground hover:bg-accent hover:text-foreground',
           )}
         >
           {m}
@@ -310,7 +319,7 @@ function SavedResponsesView({
               >
                 <Save className="size-4 shrink-0 text-muted-foreground" />
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-[13px]">{r.name}</span>
+                  <span className="block truncate text-xs">{r.name}</span>
                   <span className="block truncate text-[11px] text-muted-foreground">
                     {r.method} {r.url}
                   </span>
@@ -475,9 +484,16 @@ export function ResponsePanel({ tabId, request }: { tabId: string; request: ApiR
 
   if (sending) {
     return (
-      <div className="flex h-full items-center justify-center gap-2 text-sm text-muted-foreground">
-        <span className="size-2 animate-ping rounded-full bg-primary" />
-        Sending request…
+      <div className="flex h-full flex-col">
+        <div className="flex h-9 shrink-0 items-center border-b px-4 text-xs font-semibold text-muted-foreground">
+          Response
+        </div>
+        <div className="h-0.5 w-full overflow-hidden bg-send/15">
+          <div className="h-full w-1/3 animate-pulse bg-send" />
+        </div>
+        <div className="flex min-h-0 flex-1 items-center justify-center text-xs text-muted-foreground">
+          Sending request…
+        </div>
       </div>
     );
   }
@@ -495,33 +511,29 @@ export function ResponsePanel({ tabId, request }: { tabId: string; request: ApiR
         labels={{ tests: 'Test Results', saved: 'Examples' }}
         right={
           hasLive ? (
-            <div className="flex items-center gap-3 text-xs">
-              <span className="text-muted-foreground">
-                Status:{' '}
-                <span className={cn('font-semibold', statusColorClass(response.status))}>
-                  {response.status} {response.statusText}
-                </span>
+            <div className="flex items-center gap-2 whitespace-nowrap text-xs text-muted-foreground">
+              <span
+                className={cn(
+                  'rounded px-1.5 py-0.5 font-semibold leading-4',
+                  statusPillClass(response.status),
+                )}
+              >
+                {response.status} {response.statusText}
               </span>
-              <span className="text-muted-foreground">
-                Time:{' '}
-                <span className="font-medium text-emerald-600 dark:text-emerald-400">
-                  {formatDuration(response.durationMs)}
-                </span>
-              </span>
-              <span className="text-muted-foreground">
-                Size:{' '}
-                <span className="font-medium text-emerald-600 dark:text-emerald-400">
-                  {formatBytes(response.sizeBytes)}
-                </span>
-              </span>
+              <span className="size-[3px] rounded-full bg-muted-foreground/60" />
+              <span>{formatDuration(response.durationMs)}</span>
+              <span className="size-[3px] rounded-full bg-muted-foreground/60" />
+              <span>{formatBytes(response.sizeBytes)}</span>
             </div>
           ) : response?.error ? (
-            <span className="text-xs font-medium text-destructive">Error</span>
+            <span className={cn('rounded px-1.5 py-0.5 text-xs font-semibold leading-4', statusPillClass(500))}>
+              Error
+            </span>
           ) : null
         }
       />
       {showLiveBar && (
-        <div className="flex items-center gap-2 border-b px-3 py-1.5 text-xs">
+        <div className="flex h-9 shrink-0 items-center gap-1 px-4 text-xs">
           <ModeToggle mode={mode} setMode={setMode} />
           <span className="flex-1" />
           <CopyButton text={response.bodyText} />
@@ -553,7 +565,7 @@ export function ResponsePanel({ tabId, request }: { tabId: string; request: ApiR
           <TestsView tabId={tabId} />
         ) : response?.error ? (
           <div className="flex h-full flex-col items-center justify-center gap-2 p-6 text-center">
-            <div className="text-sm font-medium text-destructive">Request failed</div>
+            <div className="text-sm font-semibold text-foreground">Could not send request</div>
             <p className="max-w-lg break-words text-xs text-muted-foreground">{response.error}</p>
           </div>
         ) : !response ? (

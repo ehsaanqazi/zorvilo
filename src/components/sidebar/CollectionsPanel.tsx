@@ -9,6 +9,7 @@ import {
   Folder,
   FolderPlus,
   Import,
+  ListFilter,
   Play,
   Plus,
   Radio,
@@ -47,7 +48,7 @@ import {
 import { protocolPreset } from '@/lib/factories';
 import type { ApiRequest, Collection, Folder as FolderModel, SavedResponse } from '@/types/models';
 
-const ROW_HEIGHT = 26;
+const ROW_HEIGHT = 28;
 
 interface TreeRow {
   kind: 'collection' | 'folder' | 'request' | 'saved';
@@ -260,7 +261,7 @@ function ExpandToggle({
 }) {
   return (
     <span
-      className="shrink-0 rounded p-0.5 hover:bg-accent"
+      className="flex size-4 shrink-0 items-center justify-center rounded hover:bg-highlight"
       title={label}
       onClick={(e) => {
         e.stopPropagation();
@@ -382,12 +383,10 @@ function Row({
             setRenameValue(row.name);
             setRenamingId(row.id);
           }}
-          style={{ paddingLeft: 8 + row.depth * 14, height: ROW_HEIGHT }}
+          style={{ paddingLeft: 8 + row.depth * 12, height: ROW_HEIGHT }}
           className={cn(
-            'flex cursor-default select-none items-center gap-1.5 pr-2 text-[13px]',
-            'hover:bg-accent/60',
-            isActive &&
-              'bg-primary/10 font-medium before:absolute before:inset-y-0 before:left-0 before:w-0.5 before:bg-primary',
+            'flex cursor-default select-none items-center gap-1.5 pr-2 text-xs',
+            isActive ? 'bg-highlight' : 'hover:bg-accent',
             'relative',
             dragOver && 'bg-primary/10 outline outline-1 -outline-offset-1 outline-primary/40',
           )}
@@ -395,12 +394,10 @@ function Row({
           {row.kind === 'collection' || row.kind === 'folder' ? (
             <>
               <ExpandToggle expanded={!!row.expanded} onToggle={() => toggleExpanded(row.id)} />
-              <Folder
-                className={cn(
-                  'size-3.5 shrink-0',
-                  row.kind === 'collection' ? 'text-primary' : 'text-muted-foreground',
-                )}
-              />
+              {/* Postman: collections are chevron + name, only folders carry an icon */}
+              {row.kind === 'folder' && (
+                <Folder className="size-3.5 shrink-0 text-muted-foreground" strokeWidth={1.75} />
+              )}
             </>
           ) : row.kind === 'request' ? (
             <>
@@ -411,11 +408,11 @@ function Row({
                   label={`${row.savedCount} saved response${row.savedCount === 1 ? '' : 's'}`}
                 />
               ) : (
-                <span className="w-[18px] shrink-0" />
+                <span className="w-4 shrink-0" />
               )}
               <span
                 className={cn(
-                  'w-9 shrink-0 text-right font-mono text-[9.5px] font-semibold',
+                  'w-8 shrink-0 text-right text-[9px] font-bold leading-none',
                   requestBadge(row.request!).className,
                 )}
               >
@@ -424,8 +421,8 @@ function Row({
             </>
           ) : (
             <>
-              <span className="w-[18px] shrink-0" />
-              <FileText className="size-3.5 shrink-0 text-muted-foreground" />
+              <span className="w-4 shrink-0" />
+              <FileText className="size-3.5 shrink-0 text-muted-foreground" strokeWidth={1.75} />
             </>
           )}
           {isRenaming ? (
@@ -439,11 +436,18 @@ function Row({
                 if (e.key === 'Escape') setRenamingId(null);
               }}
               onClick={(e) => e.stopPropagation()}
-              className="h-5 px-1 text-[13px]"
+              className="h-5 px-1 text-xs"
             />
           ) : (
             <span
-              className={cn('min-w-0 flex-1 truncate', row.kind === 'collection' && 'font-medium')}
+              className={cn(
+                'min-w-0 flex-1 truncate',
+                row.kind === 'request' || row.kind === 'saved'
+                  ? isActive
+                    ? 'text-foreground'
+                    : 'text-foreground/80'
+                  : 'text-foreground',
+              )}
             >
               {row.name}
             </span>
@@ -454,7 +458,7 @@ function Row({
           {row.kind === 'saved' && !isRenaming && (
             <span
               className={cn(
-                'shrink-0 font-mono text-[10px] font-semibold',
+                'shrink-0 text-[10px] font-semibold',
                 statusColorClass(row.saved!.response.status),
               )}
             >
@@ -659,13 +663,8 @@ export function CollectionsPanel() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center gap-1 p-2 pb-1.5">
-        <Input
-          placeholder="Search collections"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          className="h-7"
-        />
+      {/* Postman toolbar: "+" first, then the filter box, then actions */}
+      <div className="flex h-10 shrink-0 items-center gap-1 px-2">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="iconSm" title="New…">
@@ -701,6 +700,15 @@ export function CollectionsPanel() {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+        <div className="relative min-w-0 flex-1">
+          <ListFilter className="pointer-events-none absolute left-2 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Search collections"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            className="h-7 pl-7"
+          />
+        </div>
         <Button variant="ghost" size="iconSm" title="Import" onClick={() => setDialog('import')}>
           <Import />
         </Button>

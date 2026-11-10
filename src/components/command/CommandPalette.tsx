@@ -310,7 +310,7 @@ export function CommandPalette() {
                 >
                   <span className="flex w-8 shrink-0 items-center justify-center">{item.icon}</span>
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-[13px]">{item.title}</span>
+                    <span className="block truncate text-xs">{item.title}</span>
                     {item.subtitle && (
                       <span className="block truncate text-[11px] text-muted-foreground">
                         {item.subtitle}

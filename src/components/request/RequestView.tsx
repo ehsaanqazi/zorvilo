@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Code2, Save, Send, Share2, Star, X } from 'lucide-react';
+import { Code2, Save, Share2, Star } from 'lucide-react';
 import type { ApiRequest, HttpMethod, KeyValue } from '@/types/models';
 import { formDataFiles, HTTP_METHODS } from '@/types/models';
 import { useTabs } from '@/store/tabs';
@@ -58,15 +58,15 @@ function ScriptsEditor({
   const [which, setWhich] = React.useState<'pre' | 'test'>('pre');
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center gap-2 border-b px-3 py-1.5">
+      <div className="flex items-center gap-2 border-b px-0 py-0">
         <TabStrip
           tabs={['pre', 'test'] as const}
           value={which}
           onChange={setWhich}
-          labels={{ pre: 'Pre-request', test: 'Tests' }}
+          labels={{ pre: 'Pre-request', test: 'Post-response' }}
           className="border-b-0"
         />
-        <span className="ml-auto text-[11px] text-muted-foreground">
+        <span className="ml-auto pr-4 text-[11px] text-muted-foreground">
           Stored with the request — execution sandbox coming later.
         </span>
       </div>
@@ -95,7 +95,7 @@ function SettingsEditor({
     onChange({ settings: { ...s, ...patch } });
 
   return (
-    <div className="flex flex-col gap-4 overflow-y-auto p-4">
+    <div className="flex h-full flex-col gap-4 overflow-y-auto p-4">
       <label className="flex items-center gap-3">
         <span className="w-40 shrink-0 text-xs text-muted-foreground">Name</span>
         <Input
@@ -254,11 +254,16 @@ function RequestHeader({
   };
 
   return (
-    <div className="flex h-12 shrink-0 items-center gap-2 px-4">
-      <span className={cn('shrink-0 rounded border px-1 font-mono text-[10px] font-bold', badge.className)}>
+    <div className="flex h-11 shrink-0 items-center gap-2 px-4">
+      <span
+        className={cn(
+          'shrink-0 rounded-sm border border-current/30 px-1 text-[9px] font-bold leading-4',
+          badge.className,
+        )}
+      >
         {badge.label}
       </span>
-      <div className="flex min-w-0 flex-1 items-center gap-1 text-[13px]">
+      <div className="flex min-w-0 flex-1 items-center gap-1 text-xs">
         {trail.map((t, i) => (
           <React.Fragment key={i}>
             <span className="max-w-40 truncate text-muted-foreground">{t}</span>
@@ -278,7 +283,7 @@ function RequestHeader({
                 setEditing(false);
               }
             }}
-            className="h-7 max-w-80 text-[13px] font-medium"
+            className="h-7 max-w-80 text-xs"
           />
         ) : (
           <button
@@ -288,7 +293,7 @@ function RequestHeader({
               setName(request.name);
               setEditing(true);
             }}
-            className="min-w-0 truncate rounded px-1 font-medium hover:bg-accent"
+            className="min-w-0 truncate rounded px-1 py-0.5 text-foreground hover:bg-accent"
           >
             {request.name}
           </button>
@@ -297,8 +302,9 @@ function RequestHeader({
       </div>
 
       <Button
-        variant="outline"
+        variant="ghost"
         size="sm"
+        className="px-2.5 font-medium"
         title={isDraft ? 'Save to a collection (Ctrl+S)' : 'Saved automatically'}
         onClick={() =>
           isDraft ? setDialog('saveRequest', tabId) : toast('success', 'All changes are saved')
@@ -412,15 +418,15 @@ export function RequestView({ tabId }: { tabId: string }) {
       <RequestHeader tabId={tabId} request={request} isDraft={!!tab.draft} onChange={onChange} />
 
       {/* URL bar: method + URL in one box, blue Send */}
-      <div className="flex items-center gap-2 px-4 pb-3">
-        <div className="flex h-9 min-w-0 flex-1 items-stretch rounded-md border border-input bg-background focus-within:border-muted-foreground/40">
+      <div className="flex items-center gap-2 px-4 pb-2">
+        <div className="flex h-10 min-w-0 flex-1 items-stretch rounded border border-input bg-background focus-within:border-send">
           <Select
             value={request.method}
             onValueChange={(method) => onChange({ method: method as HttpMethod })}
           >
             <SelectTrigger
               className={cn(
-                'h-full w-28 shrink-0 rounded-r-none border-0 border-r border-input bg-muted font-mono text-xs font-bold shadow-none focus:ring-0',
+                'h-full w-[104px] shrink-0 rounded-r-none border-0 border-r border-input bg-transparent pl-3 text-xs font-bold shadow-none focus:ring-0',
                 methodColorClass(request.method),
               )}
             >
@@ -431,7 +437,7 @@ export function RequestView({ tabId }: { tabId: string }) {
                 <SelectItem
                   key={m}
                   value={m}
-                  className={cn('font-mono font-bold', methodColorClass(m))}
+                  className={cn('font-bold', methodColorClass(m))}
                 >
                   {m}
                 </SelectItem>
@@ -459,15 +465,20 @@ export function RequestView({ tabId }: { tabId: string }) {
         {sending ? (
           <Button
             variant="secondary"
-            className="h-9 w-24"
+            className="h-10 w-[88px] font-semibold"
             title="Cancel request"
             onClick={cancel}
           >
-            <X /> Cancel
+            Cancel
           </Button>
         ) : (
-          <Button variant="send" className="h-9 w-24 font-semibold" onClick={send} title="Send (Ctrl+Enter)">
-            <Send /> Send
+          <Button
+            variant="send"
+            className="h-10 w-[88px] text-[13px] font-semibold"
+            onClick={send}
+            title="Send (Ctrl+Enter)"
+          >
+            Send
           </Button>
         )}
       </div>
@@ -479,7 +490,6 @@ export function RequestView({ tabId }: { tabId: string }) {
           className={cn('flex flex-col', layout === 'horizontal' ? 'min-w-52' : 'min-h-24')}
         >
           <TabStrip
-            className="px-3"
             tabs={TABS}
             value={builderTab}
             onChange={setBuilderTab}
@@ -497,9 +507,9 @@ export function RequestView({ tabId }: { tabId: string }) {
           />
           <div className="min-h-0 flex-1 overflow-hidden">
             {builderTab === 'params' && (
-              <div className="h-full overflow-y-auto p-2">
-                <div className="px-1 pb-1 text-[11px] font-medium text-muted-foreground">
-                  Query params
+              <div className="h-full overflow-y-auto px-4 pb-4 pt-3">
+                <div className="pb-2 text-xs font-semibold text-muted-foreground">
+                  Query Params
                 </div>
                 <KeyValueEditor
                   request={request}
@@ -508,8 +518,8 @@ export function RequestView({ tabId }: { tabId: string }) {
                     onChange({ params, url: urlFromParams(request.url, params) })
                   }
                 />
-                <div className="px-1 pb-1 pt-3 text-[11px] font-medium text-muted-foreground">
-                  Path variables
+                <div className="pb-2 pt-4 text-xs font-semibold text-muted-foreground">
+                  Path Variables
                 </div>
                 <KeyValueEditor
                   request={request}
@@ -517,7 +527,7 @@ export function RequestView({ tabId }: { tabId: string }) {
                   onChange={(next) => onChange(patchPathParams(request, pathParams, next))}
                   keyPlaceholder="Variable name"
                 />
-                <div className="px-1 pb-1 pt-3 text-[11px] font-medium text-muted-foreground">
+                <div className="pb-2 pt-4 text-xs font-semibold text-muted-foreground">
                   Cookies
                 </div>
                 <KeyValueEditor
@@ -529,7 +539,8 @@ export function RequestView({ tabId }: { tabId: string }) {
               </div>
             )}
             {builderTab === 'headers' && (
-              <div className="h-full overflow-y-auto p-2">
+              <div className="h-full overflow-y-auto px-4 pb-4 pt-3">
+                <div className="pb-2 text-xs font-semibold text-muted-foreground">Headers</div>
                 <KeyValueEditor
                   request={request}
                   items={request.headers}
@@ -549,8 +560,8 @@ export function RequestView({ tabId }: { tabId: string }) {
             )}
             {builderTab === 'scripts' && <ScriptsEditor request={request} onChange={onChange} />}
             {builderTab === 'variables' && (
-              <div className="h-full overflow-y-auto p-2">
-                <div className="px-1 pb-2 text-[11px] text-muted-foreground">
+              <div className="h-full overflow-y-auto px-4 pb-4 pt-3">
+                <div className="pb-2 text-xs text-muted-foreground">
                   Request-scoped variables (highest precedence).
                 </div>
                 <VariablesEditor

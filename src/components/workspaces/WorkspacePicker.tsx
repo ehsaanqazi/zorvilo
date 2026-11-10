@@ -140,12 +140,12 @@ export function WorkspacePicker({ children, align = 'start' }: WorkspacePickerPr
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search workspaces..."
                 spellCheck={false}
-                className="h-8 min-w-0 flex-1 rounded-md border border-input bg-background px-2.5 text-[13px] outline-none placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/30"
+                className="h-8 min-w-0 flex-1 rounded-md border border-input bg-background px-2.5 text-xs outline-none placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/30"
               />
               <button
                 type="button"
                 onClick={onCreate}
-                className="h-8 shrink-0 rounded-md border border-input bg-transparent px-3 text-[13px] font-medium hover:bg-accent"
+                className="h-8 shrink-0 rounded-md border border-input bg-transparent px-3 text-xs font-medium hover:bg-accent"
               >
                 Create
               </button>
@@ -153,7 +153,7 @@ export function WorkspacePicker({ children, align = 'start' }: WorkspacePickerPr
 
             <div ref={listRef} role="listbox" className="max-h-80 overflow-y-auto px-1.5 pb-1.5">
               {filtered.length === 0 ? (
-                <div className="px-2.5 py-6 text-center text-[13px] text-muted-foreground">
+                <div className="px-2.5 py-6 text-center text-xs text-muted-foreground">
                   No workspaces found
                   {query.trim() && (
                     <div className="mt-1 text-xs">
@@ -175,7 +175,7 @@ export function WorkspacePicker({ children, align = 'start' }: WorkspacePickerPr
                       onMouseEnter={() => setHighlight(i)}
                       onClick={() => pick(w.id)}
                       className={cn(
-                        'flex h-8 w-full items-center gap-2.5 rounded-md px-1 text-left text-[13px] outline-none',
+                        'flex h-8 w-full items-center gap-2.5 rounded-md px-1 text-left text-xs outline-none',
                         i === highlight && 'bg-accent',
                       )}
                     >
@@ -198,7 +198,7 @@ export function WorkspacePicker({ children, align = 'start' }: WorkspacePickerPr
               <button
                 type="button"
                 onClick={onViewAll}
-                className="flex h-8 w-full items-center gap-2.5 rounded-md px-2 text-left text-[13px] hover:bg-accent"
+                className="flex h-8 w-full items-center gap-2.5 rounded-md px-2 text-left text-xs hover:bg-accent"
               >
                 <LayoutGrid className="size-4 text-muted-foreground" />
                 View all workspaces

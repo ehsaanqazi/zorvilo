@@ -119,7 +119,7 @@ export function ExportDialog() {
               {collectionList.map((c) => (
                 <label
                   key={c.id}
-                  className="flex cursor-pointer items-center gap-2 border-b border-border/40 px-2 py-1.5 text-[13px] last:border-b-0 hover:bg-accent/50"
+                  className="flex cursor-pointer items-center gap-2 border-b border-border/40 px-2 py-1.5 text-xs last:border-b-0 hover:bg-accent/50"
                 >
                   <Checkbox
                     checked={selectedCols.has(c.id)}
@@ -163,7 +163,7 @@ export function ExportDialog() {
               {environments.map((env) => (
                 <label
                   key={env.id}
-                  className="flex cursor-pointer items-center gap-2 border-b border-border/40 px-2 py-1.5 text-[13px] last:border-b-0 hover:bg-accent/50"
+                  className="flex cursor-pointer items-center gap-2 border-b border-border/40 px-2 py-1.5 text-xs last:border-b-0 hover:bg-accent/50"
                 >
                   <Checkbox
                     checked={selectedEnvs.has(env.id)}

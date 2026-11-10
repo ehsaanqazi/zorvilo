@@ -388,7 +388,7 @@ export function RunnerDialog() {
                     <span className={cn('w-12 shrink-0 font-mono text-[10px] font-semibold', methodColorClass(request.method))}>
                       {request.method}
                     </span>
-                    <span className="min-w-0 flex-1 truncate text-[13px]">{request.name}</span>
+                    <span className="min-w-0 flex-1 truncate text-xs">{request.name}</span>
                   </label>
                 </div>
               ))
@@ -445,7 +445,7 @@ export function RunnerDialog() {
                         <span className={cn('w-12 shrink-0 font-mono text-[10px] font-semibold', methodColorClass(res.method))}>
                           {res.method}
                         </span>
-                        <span className="min-w-0 flex-1 truncate text-[13px]">{res.requestName}</span>
+                        <span className="min-w-0 flex-1 truncate text-xs">{res.requestName}</span>
                         {res.summary && (
                           <>
                             {res.summary.error ? (

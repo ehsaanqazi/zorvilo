@@ -128,8 +128,8 @@ export function CollectionView({ collectionId }: { collectionId: string }) {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center gap-2 border-b px-4 py-2.5">
-        <Folder className="size-4 shrink-0 text-primary" />
+      <div className="flex h-11 shrink-0 items-center gap-2 px-4">
+        <Folder className="size-4 shrink-0 text-muted-foreground" strokeWidth={1.75} />
         <span className="truncate text-sm font-semibold">{collection.name}</span>
         <span className="text-xs text-muted-foreground">Collection</span>
       </div>
@@ -146,15 +146,17 @@ export function CollectionView({ collectionId }: { collectionId: string }) {
           </div>
         )}
         {tab === 'authorization' && (
-          <div className="h-full overflow-y-auto">
-            <p className="px-3 pt-3 text-[11px] text-muted-foreground">
+          <div className="flex h-full flex-col overflow-y-auto">
+            <p className="shrink-0 border-b px-4 py-2.5 text-[11px] text-muted-foreground">
               Requests in this collection with auth set to “Inherit from parent” use this
               configuration.
             </p>
-            <AuthEditor
-              auth={collection.auth}
-              onChange={(auth) => updateCollection(collection.id, { auth })}
-            />
+            <div className="min-h-0 flex-1">
+              <AuthEditor
+                auth={collection.auth}
+                onChange={(auth) => updateCollection(collection.id, { auth })}
+              />
+            </div>
           </div>
         )}
         {tab === 'scripts' && <Scripts collection={collection} />}

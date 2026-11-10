@@ -109,7 +109,7 @@ export function SettingsDialog() {
                   onClick={() => setTab(id)}
                   aria-current={tab === id ? 'page' : undefined}
                   className={cn(
-                    'flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-[13px] transition-colors',
+                    'flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs transition-colors',
                     tab === id
                       ? 'bg-accent font-medium text-accent-foreground'
                       : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground',

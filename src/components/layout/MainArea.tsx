@@ -33,7 +33,7 @@ function SplitPaneHeader({ tabId }: { tabId: string }) {
     <div className="flex h-8 shrink-0 items-center gap-2 border-b bg-card px-2 text-xs">
       <Columns2 className="size-3.5 text-muted-foreground" />
       {tab?.kind !== 'collection' && request && (
-        <span className={cn('font-mono text-[10px] font-semibold', methodColorClass(request.method))}>
+        <span className={cn('text-[10px] font-bold', methodColorClass(request.method))}>
           {request.method}
         </span>
       )}
@@ -55,9 +55,9 @@ export function MainArea() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex h-10 items-stretch border-b bg-card">
+      <div className="flex h-10 shrink-0 items-stretch border-b bg-card">
         <TabBar />
-        <div className="flex shrink-0 items-center gap-1 border-l px-2">
+        <div className="flex shrink-0 items-center gap-1 px-2">
           <EnvironmentSelector />
           <SyncButton />
         </div>

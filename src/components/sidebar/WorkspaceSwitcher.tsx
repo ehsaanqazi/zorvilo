@@ -14,7 +14,7 @@ export function WorkspaceSwitcher() {
         <button
           type="button"
           className={cn(
-            'flex h-7 w-full items-center gap-1.5 rounded-md px-1.5 text-[13px] hover:bg-accent',
+            'flex h-7 w-full items-center gap-1.5 rounded px-1.5 text-xs hover:bg-accent',
             open && 'bg-accent',
           )}
           title="Switch workspace"

@@ -101,7 +101,12 @@ export function KeyValueEditor({
     return (
       <div className="flex flex-col gap-1">
         <div className="flex justify-end">
-          <Button variant="link" size="sm" className="h-6 px-1" onClick={() => setBulk(false)}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 px-1.5 font-semibold text-muted-foreground hover:text-foreground"
+            onClick={() => setBulk(false)}
+          >
             Key-Value Edit
           </Button>
         </div>
@@ -134,90 +139,118 @@ export function KeyValueEditor({
     }
   };
 
+  const CELL = 'flex min-w-0 items-center px-0.5';
+  const HEAD = 'flex min-w-0 items-center px-2.5';
+
   return (
-    <div className="flex flex-col">
-      {!lockedKeys && (
-        <div className="flex justify-end">
-          <Button variant="link" size="sm" className="h-6 px-1" onClick={enterBulk}>
+    <div className="flex flex-col border text-xs">
+      {/* header row */}
+      <div className="relative flex h-8 items-stretch border-b font-semibold text-muted-foreground">
+        <span className="w-8 shrink-0 border-r" />
+        <span className={`${HEAD} flex-1 border-r`}>Key</span>
+        <span className={`${HEAD} flex-[1.4] ${showDescription ? 'xl:border-r' : ''}`}>
+          Value
+        </span>
+        {showDescription && (
+          <span className={`${HEAD} hidden flex-1 xl:flex`}>Description</span>
+        )}
+        {!lockedKeys && <span className="w-8 shrink-0" />}
+        {!lockedKeys && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="absolute right-1 top-1/2 h-6 -translate-y-1/2 px-1.5 font-semibold text-muted-foreground hover:text-foreground"
+            onClick={enterBulk}
+          >
             Bulk Edit
           </Button>
-        </div>
-      )}
+        )}
+      </div>
       {rows.map((row, i) => {
         const isGhost = i === items.length;
         return (
           <div
             key={row.id}
-            className="group flex items-center gap-1.5 border-b border-border/40 py-1"
+            className="group flex min-h-8 items-stretch border-b last:border-b-0 hover:bg-muted/60"
           >
-            {lockedKeys ? (
-              <span className="ml-1 w-4 shrink-0" />
-            ) : (
-              <Checkbox
-                checked={isGhost ? false : row.enabled}
-                disabled={isGhost}
-                onCheckedChange={(checked) => update(i, { enabled: checked === true })}
-                className="ml-1 shrink-0"
-              />
-            )}
-            {lockedKeys ? (
-              <span
-                title={row.key}
-                className="h-7 flex-1 truncate px-2 py-1 font-mono text-xs text-muted-foreground"
-              >
-                {row.key}
-              </span>
-            ) : request ? (
-              <VariableInput
-                request={request}
-                value={row.key}
-                onChange={(key) => update(i, { key })}
-                placeholder={keyPlaceholder}
-                vars={vars}
-                className="flex-1"
-              />
-            ) : (
-              <Input
-                value={row.key}
-                placeholder={keyPlaceholder}
-                onChange={(e) => update(i, { key: e.target.value })}
-                className="h-7 flex-1 border-transparent font-mono text-xs focus-visible:border-input"
-              />
-            )}
-            {request ? (
-              <VariableInput
-                request={request}
-                value={row.value}
-                onChange={(value) => update(i, { value })}
-                placeholder={valuePlaceholder}
-                vars={vars}
-                className="flex-[1.4]"
-              />
-            ) : (
-              <Input
-                value={row.value}
-                placeholder={valuePlaceholder}
-                onChange={(e) => update(i, { value: e.target.value })}
-                className="h-7 flex-[1.4] border-transparent font-mono text-xs focus-visible:border-input"
-              />
-            )}
+            <div className="flex w-8 shrink-0 items-center justify-center border-r">
+              {!lockedKeys && !isGhost && (
+                <Checkbox
+                  checked={row.enabled}
+                  onCheckedChange={(checked) => update(i, { enabled: checked === true })}
+                  className="shrink-0"
+                />
+              )}
+            </div>
+            <div className={`${CELL} flex-1 border-r`}>
+              {lockedKeys ? (
+                <span
+                  title={row.key}
+                  className="h-7 flex-1 truncate px-2 py-1 font-mono text-xs text-muted-foreground"
+                >
+                  {row.key}
+                </span>
+              ) : request ? (
+                <VariableInput
+                  request={request}
+                  value={row.key}
+                  onChange={(key) => update(i, { key })}
+                  placeholder={keyPlaceholder}
+                  vars={vars}
+                  className="flex-1"
+                />
+              ) : (
+                <Input
+                  value={row.key}
+                  placeholder={keyPlaceholder}
+                  onChange={(e) => update(i, { key: e.target.value })}
+                  className="h-7 flex-1 border-transparent px-2 font-mono text-xs focus-visible:border-input focus-visible:ring-0"
+                />
+              )}
+            </div>
+            <div
+              className={`${CELL} flex-[1.4] ${showDescription ? 'xl:border-r' : ''}`}
+            >
+              {request ? (
+                <VariableInput
+                  request={request}
+                  value={row.value}
+                  onChange={(value) => update(i, { value })}
+                  placeholder={valuePlaceholder}
+                  vars={vars}
+                  className="flex-1"
+                />
+              ) : (
+                <Input
+                  value={row.value}
+                  placeholder={valuePlaceholder}
+                  onChange={(e) => update(i, { value: e.target.value })}
+                  className="h-7 flex-1 border-transparent px-2 font-mono text-xs focus-visible:border-input focus-visible:ring-0"
+                />
+              )}
+            </div>
             {showDescription && (
-              <Input
-                value={row.description ?? ''}
-                placeholder="Description"
-                onChange={(e) => update(i, { description: e.target.value })}
-                className="hidden h-7 flex-1 border-transparent text-xs focus-visible:border-input xl:flex"
-              />
+              <div className={`${CELL} hidden flex-1 xl:flex`}>
+                <Input
+                  value={row.description ?? ''}
+                  placeholder="Description"
+                  onChange={(e) => update(i, { description: e.target.value })}
+                  className="h-7 flex-1 border-transparent px-2 text-xs focus-visible:border-input focus-visible:ring-0"
+                />
+              </div>
             )}
             {!lockedKeys && (
-              <Button
-                variant="ghost"
-                size="iconSm"
-                className={isGhost ? 'invisible' : 'invisible group-hover:visible'}
-                onClick={() => onChange(items.filter((_, idx) => idx !== i))}
-              >
-                <Trash2 />
-              </Button>
+              <div className="flex w-8 shrink-0 items-center justify-center">
+                <Button
+                  variant="ghost"
+                  size="iconSm"
+                  title="Delete"
+                  className={isGhost ? 'invisible' : 'invisible group-hover:visible'}
+                  onClick={() => onChange(items.filter((_, idx) => idx !== i))}
+                >
+                  <Trash2 />
+                </Button>
+              </div>
             )}
           </div>
         );

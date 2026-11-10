@@ -58,7 +58,7 @@ export function RealtimeView({
     <div className="flex h-full flex-col">
       {/* connection bar */}
       <div className="flex items-center gap-2 border-b p-2.5">
-        <span className={cn('w-12 shrink-0 text-center font-mono text-xs font-bold', badge.className)}>
+        <span className={cn('w-12 shrink-0 text-center text-xs font-bold', badge.className)}>
           {badge.label}
         </span>
         <UrlInput request={request} onChange={(url) => onChange({ url })} onEnter={doConnect} />
@@ -72,7 +72,7 @@ export function RealtimeView({
             <Unplug /> Disconnect
           </Button>
         ) : (
-          <Button onClick={doConnect} disabled={status === 'connecting' || !request.url.trim()}>
+          <Button variant="send" onClick={doConnect} disabled={status === 'connecting' || !request.url.trim()}>
             <Plug /> {status === 'connecting' ? 'Connecting…' : 'Connect'}
           </Button>
         )}
@@ -168,7 +168,7 @@ export function RealtimeView({
           className="min-h-10 flex-1 resize-y font-mono text-xs"
           rows={2}
         />
-        <Button onClick={doSend} disabled={status !== 'connected' || !draft.trim()}>
+        <Button variant="send" onClick={doSend} disabled={status !== 'connected' || !draft.trim()}>
           <Send /> {isSocketIo ? 'Emit' : 'Send'}
         </Button>
       </div>

@@ -15,7 +15,7 @@ export function ContextMenuContent({
     <ContextMenuPrimitive.Portal>
       <ContextMenuPrimitive.Content
         className={cn(
-          'z-50 min-w-[10rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md',
+          'z-50 min-w-[10rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-lg',
           className,
         )}
         {...props}
@@ -31,8 +31,8 @@ export function ContextMenuItem({
   return (
     <ContextMenuPrimitive.Item
       className={cn(
-        'relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1 text-[13px] outline-none',
-        'focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
+        'relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-xs outline-none',
+        'focus:bg-highlight focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
         '[&_svg]:size-3.5 [&_svg]:shrink-0 [&_svg]:text-muted-foreground',
         className,
       )}
@@ -49,7 +49,7 @@ export function ContextMenuSubTrigger({
   return (
     <ContextMenuPrimitive.SubTrigger
       className={cn(
-        'flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1 text-[13px] outline-none focus:bg-accent data-[state=open]:bg-accent',
+        'flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-xs outline-none focus:bg-highlight data-[state=open]:bg-highlight',
         '[&_svg]:size-3.5 [&_svg]:text-muted-foreground',
         className,
       )}
@@ -69,7 +69,7 @@ export function ContextMenuSubContent({
     <ContextMenuPrimitive.Portal>
       <ContextMenuPrimitive.SubContent
         className={cn(
-          'z-50 max-h-80 min-w-[10rem] overflow-y-auto rounded-md border bg-popover p-1 text-popover-foreground shadow-md',
+          'z-50 max-h-80 min-w-[10rem] overflow-y-auto rounded-md border bg-popover p-1 text-popover-foreground shadow-lg',
           className,
         )}
         {...props}

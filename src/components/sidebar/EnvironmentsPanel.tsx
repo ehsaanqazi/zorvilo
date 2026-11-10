@@ -16,10 +16,8 @@ export function EnvironmentsPanel() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center justify-between p-2 pb-1.5">
-        <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-          Environments
-        </span>
+      <div className="flex h-10 shrink-0 items-center justify-between px-2">
+        <span className="px-1 text-xs font-semibold text-foreground">Environments</span>
         <Button
           variant="ghost"
           size="iconSm"
@@ -29,11 +27,11 @@ export function EnvironmentsPanel() {
           <Plus />
         </Button>
       </div>
-      <div className="min-h-0 flex-1 overflow-y-auto px-1.5">
+      <div className="min-h-0 flex-1 overflow-y-auto">
         <button
           type="button"
           onClick={() => openEnvironment('globals')}
-          className="flex w-full items-center gap-2 rounded px-1.5 py-1.5 text-[13px] hover:bg-accent"
+          className="flex h-7 w-full items-center gap-2 px-3 text-xs hover:bg-accent"
         >
           <Globe className="size-3.5 text-muted-foreground" />
           <span className="flex-1 truncate text-left">Globals</span>
@@ -48,8 +46,8 @@ export function EnvironmentsPanel() {
             <div
               key={env.id}
               className={cn(
-                'group flex items-center gap-2 rounded px-1.5 py-1 text-[13px] hover:bg-accent',
-                env.isActive && 'bg-accent/60',
+                'group flex h-7 items-center gap-2 px-3 text-xs',
+                env.isActive ? 'bg-highlight' : 'hover:bg-accent',
               )}
             >
               <button
@@ -58,7 +56,7 @@ export function EnvironmentsPanel() {
                 onClick={() => setActiveEnvironment(env.isActive ? null : env.id)}
                 className={cn(
                   'flex size-4 shrink-0 items-center justify-center rounded-full border',
-                  env.isActive ? 'border-primary bg-primary text-primary-foreground' : 'border-input',
+                  env.isActive ? 'border-muted-foreground bg-muted-foreground text-background' : 'border-input',
                 )}
               >
                 {env.isActive && <Check className="size-3" />}

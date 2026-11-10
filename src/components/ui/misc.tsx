@@ -25,7 +25,7 @@ export function Tooltip({
         <TooltipPrimitive.Content
           side={side}
           sideOffset={4}
-          className="z-50 rounded-md border bg-popover px-2 py-1 text-xs text-popover-foreground shadow-md"
+          className="z-50 rounded bg-[#303030] px-2 py-1 text-[11px] font-medium text-white shadow-md"
         >
           {content}
         </TooltipPrimitive.Content>
@@ -45,7 +45,7 @@ export function Switch({
       className={cn(
         'peer inline-flex h-4.5 w-8 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50',
-        'data-[state=checked]:bg-primary data-[state=unchecked]:bg-input',
+        'data-[state=checked]:bg-send data-[state=unchecked]:bg-input',
         className,
       )}
       {...props}
@@ -64,15 +64,15 @@ export function Checkbox({
   return (
     <CheckboxPrimitive.Root
       className={cn(
-        'peer size-4 shrink-0 rounded-sm border border-input transition-colors',
+        'peer size-3.5 shrink-0 rounded-sm border border-muted-foreground/50 transition-colors',
         'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50',
-        'data-[state=checked]:border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground',
+        'data-[state=checked]:border-muted-foreground data-[state=checked]:bg-muted-foreground data-[state=checked]:text-background',
         className,
       )}
       {...props}
     >
       <CheckboxPrimitive.Indicator className="flex items-center justify-center">
-        <Check className="size-3" />
+        <Check className="size-3" strokeWidth={3} />
       </CheckboxPrimitive.Indicator>
     </CheckboxPrimitive.Root>
   );
@@ -133,26 +133,26 @@ export function TabStrip<T extends string>({
   right?: React.ReactNode;
 }) {
   return (
-    <div className={cn('flex items-center gap-1 border-b px-2', className)}>
+    <div className={cn('flex items-center gap-4 border-b px-4', className)}>
       {tabs.map((tab) => (
         <button
           key={tab}
           type="button"
           onClick={() => onChange(tab)}
           className={cn(
-            '-mb-px flex items-center gap-1 border-b-2 px-2 py-2 text-[13px] capitalize transition-colors',
+            '-mb-px flex h-9 items-center gap-1 whitespace-nowrap border-b-2 px-0.5 text-xs capitalize transition-colors',
             value === tab
-              ? 'border-primary font-medium text-foreground'
+              ? 'border-primary text-foreground'
               : 'border-transparent text-muted-foreground hover:text-foreground',
           )}
         >
           {labels?.[tab] ?? tab}
           {counts?.[tab] ? (
-            <span className="text-[12px] font-normal text-emerald-600 dark:text-emerald-400">
+            <span className="text-xs font-normal text-[#007f31] dark:text-[#6bdd9a]">
               ({counts[tab]})
             </span>
           ) : dots?.[tab] ? (
-            <span className="size-1.5 rounded-full bg-emerald-500" aria-label="has content" />
+            <span className="size-1.5 rounded-full bg-[#0cbb52]" aria-label="has content" />
           ) : null}
         </button>
       ))}

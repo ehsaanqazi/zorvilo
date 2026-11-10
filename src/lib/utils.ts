@@ -109,9 +109,17 @@ export function isJsonContentType(ct: string): boolean {
 
 export function statusColorClass(status: number): string {
   if (status === 0) return 'text-muted-foreground';
-  if (status < 300) return 'text-emerald-600 dark:text-emerald-400';
-  if (status < 400) return 'text-amber-600 dark:text-amber-400';
-  return 'text-red-600 dark:text-red-400';
+  if (status < 300) return 'text-[#007f31] dark:text-[#6bdd9a]';
+  if (status < 400) return 'text-[#ad7a03] dark:text-[#ffe47e]';
+  return 'text-[#c7271a] dark:text-[#f79a8e]';
+}
+
+/** Postman-style tinted pill behind the response status ("200 OK"). */
+export function statusPillClass(status: number): string {
+  if (status === 0) return 'bg-secondary text-muted-foreground';
+  if (status < 300) return 'bg-[#e5fff1] text-[#007f31] dark:bg-[#0c3a22] dark:text-[#6bdd9a]';
+  if (status < 400) return 'bg-[#fff9e0] text-[#ad7a03] dark:bg-[#3d3104] dark:text-[#ffe47e]';
+  return 'bg-[#ffebe7] text-[#c7271a] dark:bg-[#4a1711] dark:text-[#f79a8e]';
 }
 
 /** Short label + color for a request row/tab, protocol-aware. */
@@ -136,16 +144,20 @@ export function requestBadge(request: { protocol?: string; method: string }): {
 
 export function methodColorClass(method: string): string {
   switch (method) {
+    // Postman's method palette (light / dark)
     case 'GET':
-      return 'text-emerald-600 dark:text-emerald-400';
+    case 'HEAD':
+      return 'text-[#007f31] dark:text-[#6bdd9a]';
     case 'POST':
-      return 'text-amber-600 dark:text-amber-500';
+      return 'text-[#ad7a03] dark:text-[#ffe47e]';
     case 'PUT':
-      return 'text-blue-600 dark:text-blue-400';
+      return 'text-[#0053b8] dark:text-[#74aef6]';
     case 'PATCH':
-      return 'text-violet-600 dark:text-violet-400';
+      return 'text-[#623497] dark:text-[#c0a8e1]';
     case 'DELETE':
-      return 'text-red-600 dark:text-red-400';
+      return 'text-[#8e1a10] dark:text-[#f79a8e]';
+    case 'OPTIONS':
+      return 'text-[#a61468] dark:text-[#f15eb0]';
     default:
       return 'text-muted-foreground';
   }

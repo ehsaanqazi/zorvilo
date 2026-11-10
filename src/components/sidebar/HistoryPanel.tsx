@@ -32,11 +32,11 @@ function HistoryRow({ entry }: { entry: HistoryEntry }) {
     <div
       onClick={replay}
       style={{ height: ROW_HEIGHT }}
-      className="group flex cursor-default select-none flex-col justify-center gap-0.5 border-b border-border/50 px-2 hover:bg-accent/60"
+      className="group flex cursor-default select-none flex-col justify-center gap-0.5 px-3 hover:bg-accent"
       title="Click to replay"
     >
       <div className="flex items-center gap-1.5">
-        <span className={cn('font-mono text-[10px] font-semibold', methodColorClass(entry.method))}>
+        <span className={cn('text-[9px] font-bold', methodColorClass(entry.method))}>
           {entry.method}
         </span>
         <span className="min-w-0 flex-1 truncate text-[12px]">{entry.url}</span>
@@ -95,7 +95,7 @@ export function HistoryPanel() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center gap-1 p-2 pb-1.5">
+      <div className="flex h-10 shrink-0 items-center gap-1 px-2">
         <Input
           placeholder="Search history"
           value={query}

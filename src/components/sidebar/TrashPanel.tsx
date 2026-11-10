@@ -35,10 +35,8 @@ export function TrashPanel() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center justify-between p-2 pb-1.5">
-        <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-          Trash
-        </span>
+      <div className="flex h-10 shrink-0 items-center justify-between px-2">
+        <span className="px-1 text-xs font-semibold text-foreground">Trash</span>
         <Button
           variant="ghost"
           size="iconSm"
@@ -56,23 +54,23 @@ export function TrashPanel() {
           <Trash2 />
         </Button>
       </div>
-      <p className="px-2 pb-2 text-[11px] text-muted-foreground">
+      <p className="px-3 pb-2 text-[11px] text-muted-foreground">
         Deleted items are kept for 30 days, then removed permanently.
       </p>
       {entries.length === 0 ? (
         <EmptyState icon={<Trash2 />} title="Trash is empty" />
       ) : (
-        <div className="min-h-0 flex-1 overflow-y-auto px-1.5">
+        <div className="min-h-0 flex-1 overflow-y-auto">
           {entries.map((entry) => {
             const Icon = KIND_ICON[entry.kind];
             return (
               <div
                 key={entry.id}
-                className="group flex items-center gap-2 rounded px-1.5 py-1.5 hover:bg-accent"
+                className="group flex items-center gap-2 px-3 py-1.5 hover:bg-accent"
               >
                 <Icon className="size-3.5 shrink-0 text-muted-foreground" />
                 <div className="min-w-0 flex-1">
-                  <div className="truncate text-[13px]">{entry.name}</div>
+                  <div className="truncate text-xs">{entry.name}</div>
                   <div className="text-[11px] text-muted-foreground">
                     {entry.kind} · deleted {formatTimestamp(entry.deletedAt)}
                   </div>

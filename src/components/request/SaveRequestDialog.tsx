@@ -80,7 +80,7 @@ export function SaveRequestDialog() {
             onClick={() => pickFolder(folder)}
             style={{ paddingLeft: 12 + depth * 16 }}
             className={cn(
-              'flex w-full items-center gap-1.5 rounded px-2 py-1 text-left text-[13px] hover:bg-accent',
+              'flex w-full items-center gap-1.5 rounded px-2 py-1 text-left text-xs hover:bg-accent',
               isSelected && 'bg-accent font-medium',
             )}
           >
@@ -149,7 +149,7 @@ export function SaveRequestDialog() {
                       setFolderId(null); // collection root
                     }}
                     className={cn(
-                      'flex w-full items-center gap-1.5 rounded px-2 py-1.5 text-left text-[13px] hover:bg-accent',
+                      'flex w-full items-center gap-1.5 rounded px-2 py-1.5 text-left text-xs hover:bg-accent',
                       isCurrent && folderId === null && 'bg-accent font-medium',
                     )}
                   >
