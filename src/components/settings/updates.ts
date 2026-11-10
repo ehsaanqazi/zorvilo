@@ -16,9 +16,26 @@ export function checkForUpdate(): Promise<UpdateInfo> {
   return invoke<UpdateInfo>('update_check', { repo: UPDATE_REPO });
 }
 
-/** Download the release asset and open its installer. Resolves to the downloaded path. */
-export function installUpdate(asset: NonNullable<UpdateInfo['asset']>): Promise<string> {
-  return invoke<string>('update_install', { url: asset.url, name: asset.name });
+export interface InstallOutcome {
+  /** The update is being applied over the current app, which is about to restart. */
+  restarting: boolean;
+  /** Where the installer was saved when it had to be opened manually. */
+  path: string | null;
+}
+
+/** Download the release asset and install it over the current app (restarting it). */
+export function installUpdate(asset: NonNullable<UpdateInfo['asset']>): Promise<InstallOutcome> {
+  return invoke<InstallOutcome>('update_install', { url: asset.url, name: asset.name });
+}
+
+/** Toast describing what happens after `installUpdate` resolves. */
+export function installedMessage(version: string, outcome: InstallOutcome): [string, string] {
+  return outcome.restarting
+    ? [`Updating to Zorvilo ${version}`, 'Zorvilo will restart in a moment with the new version.']
+    : [
+        `Zorvilo ${version} downloaded`,
+        `The installer was opened (${outcome.path ?? 'Downloads'}). Quit Zorvilo and complete the installation to finish updating.`,
+      ];
 }
 
 const SKIPPED_KEY = 'zorvilo.update.skippedVersion';

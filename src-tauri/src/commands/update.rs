@@ -1,5 +1,5 @@
 //! "Update" — find the latest GitHub release, download the installer for this
-//! platform and open it.
+//! platform and install it over the running app, then relaunch.
 
 use std::path::PathBuf;
 
@@ -84,9 +84,9 @@ fn asset_score(name: &str) -> Option<u32> {
     let base = if cfg!(target_os = "macos") {
         if n.ends_with(".dmg") { 10 } else { return None }
     } else if cfg!(target_os = "windows") {
-        if n.ends_with(".msi") {
+        if n.ends_with("-setup.exe") {
             10
-        } else if n.ends_with(".exe") {
+        } else if n.ends_with(".msi") {
             9
         } else {
             return None;
@@ -125,7 +125,7 @@ fn parse_repo(repo: &str) -> CmdResult<String> {
 
 /// Look up the latest published release of `repo` (owner/repo).
 #[tauri::command]
-pub async fn update_check(repo: String) -> CmdResult<UpdateInfo> {
+pub async fn update_check(app: tauri::AppHandle, repo: String) -> CmdResult<UpdateInfo> {
     let repo = parse_repo(&repo)?;
     let resp = client()?
         .get(format!("https://api.github.com/repos/{repo}/releases/latest"))
@@ -144,7 +144,7 @@ pub async fn update_check(repo: String) -> CmdResult<UpdateInfo> {
     if rel.draft {
         return Err("The latest release is still a draft.".into());
     }
-    let current = env!("CARGO_PKG_VERSION").to_string();
+    let current = app.package_info().version.to_string();
     let asset = rel
         .assets
         .iter()
@@ -168,6 +168,14 @@ fn downloads_dir() -> PathBuf {
         .unwrap_or_else(std::env::temp_dir)
 }
 
+/// Fresh, empty scratch directory for one update attempt.
+fn staging_dir() -> CmdResult<PathBuf> {
+    let dir = std::env::temp_dir().join(format!("zorvilo-update-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(&dir).map_err(|e| format!("could not create {}: {e}", dir.display()))?;
+    Ok(dir)
+}
+
 fn open_path(path: &std::path::Path) -> CmdResult<()> {
     let status = if cfg!(target_os = "macos") {
         std::process::Command::new("open").arg(path).status()
@@ -180,9 +188,152 @@ fn open_path(path: &std::path::Path) -> CmdResult<()> {
     status.map(|_| ()).map_err(|e| format!("could not open {}: {e}", path.display()))
 }
 
-/// Download the installer into the Downloads folder and open it. Returns the file path.
+#[cfg(target_os = "macos")]
+fn run(cmd: &mut std::process::Command, what: &str) -> CmdResult<String> {
+    let out = cmd.output().map_err(|e| format!("{what} failed: {e}"))?;
+    if !out.status.success() {
+        let err = String::from_utf8_lossy(&out.stderr);
+        return Err(format!("{what} failed: {}", err.trim()));
+    }
+    Ok(String::from_utf8_lossy(&out.stdout).to_string())
+}
+
+fn spawn_detached(cmd: &mut std::process::Command, what: &str) -> CmdResult<()> {
+    use std::process::Stdio;
+    cmd.stdin(Stdio::null()).stdout(Stdio::null()).stderr(Stdio::null());
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        const DETACHED_PROCESS: u32 = 0x0000_0008;
+        const CREATE_NEW_PROCESS_GROUP: u32 = 0x0000_0200;
+        cmd.creation_flags(DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP);
+    }
+    cmd.spawn().map(|_| ()).map_err(|e| format!("could not start {what}: {e}"))
+}
+
+/// The `.app` bundle this process runs from, e.g. /Applications/Zorvilo.app.
+#[cfg(target_os = "macos")]
+fn current_app_bundle() -> Option<PathBuf> {
+    let exe = std::env::current_exe().ok()?.canonicalize().ok()?;
+    exe.ancestors()
+        .find(|p| p.extension().map(|e| e == "app").unwrap_or(false))
+        .map(|p| p.to_path_buf())
+}
+
+/// macOS: copy the new .app out of the DMG, then — once Zorvilo has quit —
+/// swap it in place of the running bundle and relaunch it.
+#[cfg(target_os = "macos")]
+fn apply_macos(installer: &std::path::Path, stage: &std::path::Path) -> CmdResult<bool> {
+    use std::process::Command;
+    if !installer.extension().map(|e| e.eq_ignore_ascii_case("dmg")).unwrap_or(false) {
+        return Ok(false);
+    }
+    let Some(bundle) = current_app_bundle() else { return Ok(false) };
+    let parent = bundle.parent().ok_or("invalid app location")?;
+    let writable = |p: &std::path::Path| {
+        std::fs::metadata(p).map(|m| !m.permissions().readonly()).unwrap_or(false)
+    };
+    if !writable(parent) || !writable(&bundle) {
+        return Ok(false);
+    }
+
+    let mount = stage.join("mnt");
+    std::fs::create_dir_all(&mount).map_err(|e| e.to_string())?;
+    run(
+        Command::new("hdiutil")
+            .args(["attach", "-nobrowse", "-readonly", "-noautoopen", "-quiet", "-mountpoint"])
+            .arg(&mount)
+            .arg(installer),
+        "mounting the update",
+    )?;
+    let copied = (|| -> CmdResult<PathBuf> {
+        let app = std::fs::read_dir(&mount)
+            .map_err(|e| e.to_string())?
+            .filter_map(|e| e.ok().map(|e| e.path()))
+            .find(|p| p.extension().map(|e| e == "app").unwrap_or(false))
+            .ok_or("the update image does not contain an app")?;
+        let staged = stage.join(app.file_name().ok_or("invalid app name")?);
+        run(Command::new("ditto").arg(&app).arg(&staged), "copying the update")?;
+        Ok(staged)
+    })();
+    let _ = Command::new("hdiutil").args(["detach", "-quiet", "-force"]).arg(&mount).status();
+    let staged = copied?;
+    let _ = Command::new("xattr").arg("-cr").arg(&staged).status();
+
+    // Wait for this process to exit, swap bundles (rolling back on failure), relaunch.
+    const SCRIPT: &str = r#"
+PID="$1"; APP="$2"; NEW="$3"; STAGE="$4"
+while kill -0 "$PID" 2>/dev/null; do sleep 0.2; done
+OLD="$APP.zorvilo-old"
+rm -rf "$OLD"
+if mv "$APP" "$OLD"; then
+  if ditto "$NEW" "$APP"; then
+    rm -rf "$OLD"
+  else
+    rm -rf "$APP"; mv "$OLD" "$APP"
+  fi
+fi
+xattr -cr "$APP" 2>/dev/null
+rm -rf "$STAGE"
+open "$APP"
+"#;
+    spawn_detached(
+        Command::new("/bin/sh")
+            .arg("-c")
+            .arg(SCRIPT)
+            .arg("zorvilo-updater")
+            .arg(std::process::id().to_string())
+            .arg(&bundle)
+            .arg(&staged)
+            .arg(stage),
+        "the updater",
+    )?;
+    Ok(true)
+}
+
+/// Windows: run the NSIS installer in passive mode over the existing install;
+/// `/R` makes it relaunch Zorvilo when it finishes.
+#[cfg(target_os = "windows")]
+fn apply_windows(installer: &std::path::Path) -> CmdResult<bool> {
+    let is_exe = installer.extension().map(|e| e.eq_ignore_ascii_case("exe")).unwrap_or(false);
+    if !is_exe {
+        return Ok(false);
+    }
+    spawn_detached(std::process::Command::new(installer).args(["/P", "/R"]), "the installer")?;
+    Ok(true)
+}
+
+/// Linux: replace the running AppImage file and start the new one.
+#[cfg(target_os = "linux")]
+fn apply_linux(installer: &std::path::Path) -> CmdResult<bool> {
+    use std::os::unix::fs::PermissionsExt;
+    let is_appimage = installer.extension().map(|e| e.eq_ignore_ascii_case("appimage")).unwrap_or(false);
+    let Some(current) = std::env::var_os("APPIMAGE").map(PathBuf::from) else { return Ok(false) };
+    if !is_appimage || !current.is_file() {
+        return Ok(false);
+    }
+    let tmp = current.with_extension("AppImage.new");
+    std::fs::copy(installer, &tmp).map_err(|e| format!("could not write {}: {e}", tmp.display()))?;
+    let _ = std::fs::set_permissions(&tmp, std::fs::Permissions::from_mode(0o755));
+    std::fs::rename(&tmp, &current).map_err(|e| format!("could not replace {}: {e}", current.display()))?;
+    spawn_detached(&mut std::process::Command::new(&current), "the new version")?;
+    Ok(true)
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct InstallOutcome {
+    /// true → the update is being applied in place and Zorvilo is about to restart
+    restarting: bool,
+    /// where the installer was saved when it had to be opened manually
+    path: Option<String>,
+}
+
+/// Download the update and install it over the current app, then restart.
+/// When an in-place update isn't possible (e.g. the app lives in a read-only
+/// location), the installer is saved to Downloads and opened instead.
 #[tauri::command]
-pub async fn update_install(url: String, name: String) -> CmdResult<String> {
+pub async fn update_install(app: tauri::AppHandle, url: String, name: String) -> CmdResult<InstallOutcome> {
     if !url.starts_with("https://github.com/") && !url.starts_with("https://objects.githubusercontent.com/") {
         return Err("refusing to download an update from outside GitHub".into());
     }
@@ -192,19 +343,47 @@ pub async fn update_install(url: String, name: String) -> CmdResult<String> {
         return Err(format!("download failed: HTTP {}", resp.status()));
     }
     let bytes = resp.bytes().await.map_err(|e| format!("download failed: {e}"))?;
-    let path = downloads_dir().join(file_name);
-    let target = path.clone();
-    super::blocking(move || {
-        std::fs::write(&target, &bytes).map_err(|e| format!("could not save {}: {e}", target.display()))?;
+
+    let outcome = super::blocking(move || {
+        let stage = staging_dir()?;
+        let installer = stage.join(&file_name);
+        std::fs::write(&installer, &bytes).map_err(|e| format!("could not save {}: {e}", installer.display()))?;
+
+        #[cfg(target_os = "macos")]
+        let applied = apply_macos(&installer, &stage)?;
+        #[cfg(target_os = "windows")]
+        let applied = apply_windows(&installer)?;
+        #[cfg(target_os = "linux")]
+        let applied = apply_linux(&installer)?;
+        #[cfg(not(any(target_os = "macos", target_os = "windows", target_os = "linux")))]
+        let applied = false;
+
+        if applied {
+            return Ok(InstallOutcome { restarting: true, path: None });
+        }
+
+        // Fallback: hand the installer to the user.
+        let target = downloads_dir().join(&file_name);
+        std::fs::copy(&installer, &target).map_err(|e| format!("could not save {}: {e}", target.display()))?;
+        let _ = std::fs::remove_dir_all(&stage);
         #[cfg(unix)]
         if target.extension().map(|e| e.eq_ignore_ascii_case("appimage")).unwrap_or(false) {
             use std::os::unix::fs::PermissionsExt;
             let _ = std::fs::set_permissions(&target, std::fs::Permissions::from_mode(0o755));
         }
-        open_path(&target)
+        open_path(&target)?;
+        Ok(InstallOutcome { restarting: false, path: Some(target.display().to_string()) })
     })
     .await?;
-    Ok(path.display().to_string())
+
+    if outcome.restarting {
+        // Let the response reach the UI, then quit so the update can replace us.
+        tauri::async_runtime::spawn(async move {
+            tokio::time::sleep(std::time::Duration::from_millis(1200)).await;
+            app.exit(0);
+        });
+    }
+    Ok(outcome)
 }
 
 #[cfg(test)]

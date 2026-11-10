@@ -50,6 +50,36 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # The tag is the source of truth for the version: stamp it into the Tauri
+      # and Cargo manifests so the built app reports the same version as its release
+      # (otherwise the in-app updater keeps offering the release you're on).
+      - name: Sync app version from tag
+        if: github.ref_type == 'tag'
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="${GITHUB_REF_NAME#v}"
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+([-+].*)?$ ]]; then
+            echo "Tag $GITHUB_REF_NAME is not a semantic version (expected vX.Y.Z)" >&2
+            exit 1
+          fi
+          VERSION="$VERSION" node -e '
+            const fs = require("fs");
+            for (const f of ["src-tauri/tauri.conf.json"]) {
+              const j = JSON.parse(fs.readFileSync(f, "utf8"));
+              j.version = process.env.VERSION;
+              fs.writeFileSync(f, JSON.stringify(j, null, 2) + "\n");
+            }
+            const c = "src-tauri/Cargo.toml";
+            const toml = fs.readFileSync(c, "utf8").replace(
+              /(\[workspace\.package\][^\[]*?\nversion = ")[^"]*(")/,
+              `$1${process.env.VERSION}$2`,
+            );
+            fs.writeFileSync(c, toml);
+          '
+          grep -n '"version"' src-tauri/tauri.conf.json
+          grep -n '^version = ' src-tauri/Cargo.toml
+
       # Linux dependencies
       - name: Install Linux dependencies
         if: matrix.platform == 'ubuntu-22.04'

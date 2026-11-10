@@ -19,9 +19,9 @@ pub struct AppInfo {
 }
 
 #[tauri::command]
-pub fn app_info(state: State<'_, AppState>) -> AppInfo {
+pub fn app_info(app: AppHandle, state: State<'_, AppState>) -> AppInfo {
     AppInfo {
-        version: env!("CARGO_PKG_VERSION").to_string(),
+        version: app.package_info().version.to_string(),
         data_dir: state.paths.root.display().to_string(),
         keychain_available: state.secrets.is_persistent(),
         platform: std::env::consts::OS.to_string(),

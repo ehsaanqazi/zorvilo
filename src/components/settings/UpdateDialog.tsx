@@ -15,6 +15,7 @@ import {
   checkForUpdate,
   clearUpdatePrompts,
   installUpdate,
+  installedMessage,
   remindLater,
   shouldPrompt,
   skipVersion,
@@ -68,13 +69,10 @@ export function UpdateDialog() {
     }
     setInstalling(true);
     try {
-      const path = await installUpdate(info.asset);
+      const outcome = await installUpdate(info.asset);
       clearUpdatePrompts();
-      toast(
-        'success',
-        `Zorvilo ${info.latest} downloaded`,
-        `The installer was opened (${path}). Quit Zorvilo and complete the installation to finish updating.`,
-      );
+      const [title, detail] = installedMessage(info.latest, outcome);
+      toast('success', title, detail);
       close();
     } catch (err) {
       toast('error', 'Update failed', err instanceof Error ? err.message : String(err));
@@ -116,7 +114,7 @@ export function UpdateDialog() {
           </Button>
           <Button size="sm" autoFocus disabled={installing} onClick={() => void onUpdate()}>
             <Download />
-            {installing ? 'Downloading…' : 'Update now'}
+            {installing ? 'Updating…' : 'Update now'}
           </Button>
         </DialogFooter>
       </DialogContent>

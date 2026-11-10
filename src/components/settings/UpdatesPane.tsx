@@ -6,7 +6,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Pane, Row } from './shared';
 import { RELEASES_URL, UPDATE_REPO, useAppInfo } from './appMeta';
-import { checkForUpdate, clearUpdatePrompts, installUpdate, type UpdateInfo } from './updates';
+import {
+  checkForUpdate,
+  clearUpdatePrompts,
+  installUpdate,
+  installedMessage,
+  type UpdateInfo,
+} from './updates';
 
 /** Check GitHub Releases for a newer version and install it. */
 export function UpdatesPane() {
@@ -35,13 +41,10 @@ export function UpdatesPane() {
     if (!info?.asset) return;
     setInstalling(true);
     try {
-      const path = await installUpdate(info.asset);
+      const outcome = await installUpdate(info.asset);
       clearUpdatePrompts();
-      toast(
-        'success',
-        `Zorvilo ${info.latest} downloaded`,
-        `The installer was opened (${path}). Quit Zorvilo and complete the installation to finish updating.`,
-      );
+      const [title, detail] = installedMessage(info.latest, outcome);
+      toast('success', title, detail);
     } catch (err) {
       toast('error', 'Update failed', err instanceof Error ? err.message : String(err));
     } finally {
@@ -98,7 +101,7 @@ export function UpdatesPane() {
           <div className="flex gap-2">
             {info.asset ? (
               <Button size="sm" disabled={installing} onClick={() => void install()}>
-                <Download /> {installing ? 'Downloading…' : `Download & install ${info.latest}`}
+                <Download /> {installing ? 'Updating…' : `Update to ${info.latest}`}
               </Button>
             ) : (
               <span className="self-center text-muted-foreground">
