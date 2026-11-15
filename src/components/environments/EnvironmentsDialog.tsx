@@ -2,12 +2,12 @@ import * as React from 'react';
 import { Download, Plus, Trash2, Upload } from 'lucide-react';
 import { useEnvironments } from '@/store/environments';
 import { useUi, toast, confirmDelete } from '@/store/ui';
-import { downloadBlob, slugify, cn } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { VariablesEditor } from './VariablesEditor';
-import { exportPostmanEnvironment } from '@/features/exporter/postman';
+import { saveEnvironmentToFile } from '@/features/exporter/postman';
 import { importPostmanEnvironment } from '@/features/importer';
 import { openTextFile } from '@/features/fs/fileAccess';
 
@@ -52,11 +52,7 @@ export function EnvironmentsDialog() {
   const exportEnv = async () => {
     if (!selected) return;
     try {
-      const json = await exportPostmanEnvironment(selected);
-      await downloadBlob(
-        new Blob([JSON.stringify(json, null, 2)], { type: 'application/json' }),
-        `${slugify(selected.name)}.postman_environment.json`,
-      );
+      if (await saveEnvironmentToFile(selected)) toast('success', `Exported "${selected.name}"`);
     } catch (err) {
       toast('error', 'Export failed', err instanceof Error ? err.message : String(err));
     }

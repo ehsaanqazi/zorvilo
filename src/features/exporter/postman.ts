@@ -1,6 +1,7 @@
 import type { ApiRequest, Collection, Environment, Folder, HistoryEntry, SavedResponse } from '@/types/models';
 import { flushPending } from '@/db/persistence';
 import { invoke } from '@/platform/tauri';
+import { slugify } from '@/lib/utils';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -17,6 +18,13 @@ export function exportPostmanCollection(
 
 export function exportPostmanEnvironment(environment: Environment): Promise<any> {
   return invoke('export_postman_environment', { environment, includeSecrets: true });
+}
+
+/** Export one environment as a Postman environment JSON file (opens a Save dialog). */
+export async function saveEnvironmentToFile(environment: Environment): Promise<boolean> {
+  await flushPending();
+  const data = await exportPostmanEnvironment(environment);
+  return saveJsonFiles([{ name: `${slugify(environment.name)}.postman_environment.json`, data }]);
 }
 
 /** Full-workspace bundle in our own format (round-trips via import). */

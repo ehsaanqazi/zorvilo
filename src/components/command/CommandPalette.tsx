@@ -1,5 +1,6 @@
 import * as React from 'react';
 import {
+  Download,
   Folder,
   FolderTree,
   History,
@@ -77,6 +78,13 @@ function useItems(query: string): Item[] {
         icon: <Save className="size-4" />,
         title: 'Import (Postman collection / environment)',
         run: () => ui.setDialog('import'),
+      },
+      {
+        id: 'a:export',
+        group: 'Actions',
+        icon: <Download className="size-4" />,
+        title: 'Export (collections / environments)',
+        run: () => ui.setDialog('export'),
       },
       {
         id: 'a:settings',
@@ -169,7 +177,7 @@ function useItems(query: string): Item[] {
           icon: <Layers className="size-4 text-muted-foreground" />,
           title: env.name,
           subtitle: `${env.variables.length} variables`,
-          run: () => useUi.getState().setDialog('environments'),
+          run: () => useUi.getState().openEnvironment(env.id),
         });
       }
     }

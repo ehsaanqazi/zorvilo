@@ -1,6 +1,8 @@
-import { Check, Copy, Globe, Layers, Plus, Trash2 } from 'lucide-react';
+import { Check, Copy, Download, Globe, Import, Layers, Plus, Trash2 } from 'lucide-react';
 import { useEnvironments } from '@/store/environments';
-import { useUi, confirmDelete } from '@/store/ui';
+import { useUi, confirmDelete, toast } from '@/store/ui';
+import { saveEnvironmentToFile } from '@/features/exporter/postman';
+import type { Environment } from '@/types/models';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/misc';
 import { cn } from '@/lib/utils';
@@ -14,18 +16,40 @@ export function EnvironmentsPanel() {
   const setDialog = useUi((s) => s.setDialog);
   const openEnvironment = useUi((s) => s.openEnvironment);
 
+  const exportEnv = async (env: Environment) => {
+    try {
+      if (await saveEnvironmentToFile(env)) toast('success', `Exported "${env.name}"`);
+    } catch (err) {
+      toast('error', 'Export failed', err instanceof Error ? err.message : String(err));
+    }
+  };
+
   return (
     <div className="flex h-full flex-col">
       <div className="flex h-10 shrink-0 items-center justify-between px-2">
         <span className="px-1 text-xs font-semibold text-foreground">Environments</span>
-        <Button
-          variant="ghost"
-          size="iconSm"
-          title="New environment"
-          onClick={() => createEnvironment(activeWorkspaceId, 'New Environment')}
-        >
-          <Plus />
-        </Button>
+        <div className="flex items-center">
+          <Button variant="ghost" size="iconSm" title="Import environment" onClick={() => setDialog('import')}>
+            <Import />
+          </Button>
+          <Button
+            variant="ghost"
+            size="iconSm"
+            title="Export environments"
+            disabled={environments.length === 0}
+            onClick={() => setDialog('export')}
+          >
+            <Download />
+          </Button>
+          <Button
+            variant="ghost"
+            size="iconSm"
+            title="New environment"
+            onClick={() => createEnvironment(activeWorkspaceId, 'New Environment')}
+          >
+            <Plus />
+          </Button>
+        </div>
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto">
         <button
@@ -73,6 +97,14 @@ export function EnvironmentsPanel() {
                 {env.variables.length}
               </span>
               <div className="hidden shrink-0 items-center group-hover:flex">
+                <Button
+                  variant="ghost"
+                  size="iconSm"
+                  title="Export"
+                  onClick={() => void exportEnv(env)}
+                >
+                  <Download />
+                </Button>
                 <Button
                   variant="ghost"
                   size="iconSm"
