@@ -132,16 +132,48 @@ pub struct NamedText {
     text: String,
 }
 
-/// Pick a folder and write several files into it. Returns the folder, or null when cancelled.
+/// Turn a UI-supplied relative path ("collections/a.json") into a safe relative
+/// path: only plain components, no roots, `..` or `.`.
+fn safe_relative(name: &str) -> CmdResult<PathBuf> {
+    let mut out = PathBuf::new();
+    for part in name.split(['/', '\\']) {
+        if part.is_empty() || part == "." || part == ".." || part.contains(':') {
+            return Err(format!("invalid file name: {name}"));
+        }
+        out.push(part);
+    }
+    if out.as_os_str().is_empty() {
+        return Err("invalid file name".into());
+    }
+    Ok(out)
+}
+
+/// Pick a folder and write several files into it. When `folder` is given, a new
+/// sub-folder with that name is created inside the chosen folder (suffixed
+/// `-2`, `-3`, … if it already exists) and file names may contain
+/// sub-directories such as `collections/x.json`. Returns the folder written to,
+/// or null when cancelled.
 #[tauri::command]
-pub async fn save_files_to_folder(app: AppHandle, files: Vec<NamedText>) -> CmdResult<Option<String>> {
+pub async fn save_files_to_folder(app: AppHandle, files: Vec<NamedText>, folder: Option<String>) -> CmdResult<Option<String>> {
     super::blocking(move || {
         let Some(dir) = app.dialog().file().blocking_pick_folder() else { return Ok(None) };
-        let dir = to_path(dir)?;
+        let mut dir = to_path(dir)?;
+        if let Some(folder) = folder.as_deref().map(str::trim).filter(|f| !f.is_empty()) {
+            let base = Path::new(folder).file_name().ok_or("invalid folder name")?.to_string_lossy().into_owned();
+            let mut target = dir.join(&base);
+            let mut n = 2;
+            while target.exists() {
+                target = dir.join(format!("{base}-{n}"));
+                n += 1;
+            }
+            dir = target;
+        }
         for f in files {
-            // file names come from the UI: keep only the final component
-            let name = Path::new(&f.name).file_name().map(|n| n.to_owned()).ok_or("invalid file name")?;
-            let path = dir.join(name);
+            let rel = safe_relative(&f.name)?;
+            let path = dir.join(rel);
+            if let Some(parent) = path.parent() {
+                std::fs::create_dir_all(parent).map_err(|e| format!("could not create {}: {e}", parent.display()))?;
+            }
             std::fs::write(&path, f.text).map_err(|e| format!("could not save {}: {e}", path.display()))?;
         }
         Ok(Some(dir.display().to_string()))

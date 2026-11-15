@@ -7,7 +7,7 @@ import { slugify } from '@/lib/utils';
 import {
   exportPostmanCollection,
   exportPostmanEnvironment,
-  saveJsonFiles,
+  saveExportFolder,
 } from '@/features/exporter/postman';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/misc';
@@ -51,11 +51,12 @@ export function ExportDialog() {
 
   const doExport = async () => {
     try {
-      const files: { name: string; data: unknown }[] = [];
+      const colFiles: { name: string; data: unknown }[] = [];
+      const envFiles: { name: string; data: unknown }[] = [];
       for (const id of selectedCols) {
         const collection = collections[id];
         if (!collection) continue;
-        files.push({
+        colFiles.push({
           name: `${slugify(collection.name)}.postman_collection.json`,
           data: await exportPostmanCollection(
             collection,
@@ -67,14 +68,18 @@ export function ExportDialog() {
       for (const id of selectedEnvs) {
         const env = environments.find((e) => e.id === id);
         if (!env) continue;
-        files.push({
+        envFiles.push({
           name: `${slugify(env.name)}.postman_environment.json`,
           data: await exportPostmanEnvironment(env),
         });
       }
-      // one file → Save dialog; several → choose a folder
-      if (!(await saveJsonFiles(files))) return;
-      toast('success', `Exported ${files.length} file(s)`, 'Each item was saved as a separate JSON file.');
+      // choose a location → zorvilo_export_dd-mm-yy/{collections,environments}/
+      if (!(await saveExportFolder({ collections: colFiles, environments: envFiles }))) return;
+      toast(
+        'success',
+        `Exported ${colFiles.length + envFiles.length} file(s)`,
+        'Saved in a zorvilo_export folder.',
+      );
       setDialog(null);
     } catch (err) {
       toast('error', 'Export failed', err instanceof Error ? err.message : String(err));
@@ -87,7 +92,7 @@ export function ExportDialog() {
         <DialogHeader>
           <DialogTitle>Export</DialogTitle>
           <DialogDescription>
-            Select collections and environments — each is saved as a separate Postman JSON file.
+            Select collections and environments — they are saved as Postman JSON files in a dated zorvilo_export folder.
           </DialogDescription>
         </DialogHeader>
         <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto">
